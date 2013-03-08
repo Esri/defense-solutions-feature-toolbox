@@ -2,7 +2,7 @@
 
 The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
 
-![Image of Military Feature Toolbox]( ScreenShot.jpg "military-feature-toolbox" )
+![Image of Military Feature Toolbox]( ScreenShot.JPG "military-feature-toolbox" )
 
 ## Features
 
