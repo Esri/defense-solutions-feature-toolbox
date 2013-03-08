@@ -1,0 +1,3 @@
+import WriteMessageFromFeature
+
+WriteMessageFromFeature.writeMessageFile()

@@ -1,0 +1,4 @@
+import WriteMessageFromFeature
+
+WriteMessageFromFeature.DEBUG_GEOMETRY_CONVERSION = True
+WriteMessageFromFeature.writeMessageFile()

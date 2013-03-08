@@ -1,0 +1,4 @@
+import WriteFeatureFromMessage
+
+WriteFeatureFromMessage.writeFeaturesFromMessageFile()
+
