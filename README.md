@@ -1,4 +1,4 @@
-# military-feature-toolbox
+﻿# military-feature-toolbox
 
 The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
 
@@ -10,16 +10,6 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
     * Tools for importing/appending non-military feature classes into a military feature geodatabase
     * Tools for converting military features to ArcGIS Runtime messages (and visa-versa)
 
-<<<<<<< HEAD
-## <a link="Requirements"></a>Requirements
-
-* ArcGIS Desktop 10.1 Standard
-    *  Some tools require additional licenses (these tools will be disabled if license is unavailable)
-    *  ArcGIS Desktop Advanced license is required for tools that change Representation Rules (e.g. Append Military Features)
-* Visual Studio 2010 or later
-* ArcObjects .NET Engine or Desktop Development Kit
-* (Optional) Apache Ant - used to download and extract dependent data
-=======
 ## Requirements
 
 * ArcGIS Desktop 10.1 Advanced
@@ -27,7 +17,6 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 * Visual Studio 2010 or later
 * ArcObjects .NET Engine or Desktop Development Kit
 * Apache Ant - used to download and extract dependent data and run test drivers
->>>>>>> Updates from Testing, Added Test Drivers
 
 ## Instructions
 
@@ -47,10 +36,6 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * cd military-feature-toolbox
         * > ant
         * Verify “Build Succeeded”  
-<<<<<<< HEAD
-
-
-=======
         * This will create a directory military-feature-toolbox/data with required data files
 * Open and build the Visual Studio 2010 Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
 * (Optional) Test the command line AppendMilitaryFeatures application
@@ -58,7 +43,6 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
     * > AppendMilitaryFeatures.exe TestInput\tacticallines.shp TestOutput\MilitaryFeature.gdb Symbol_ID
 * Start ArcMap or ArcCatalog and run the Append Military Features Geoprocessing tool at military-feature-toolbox\toolboxes
     *  IMPORTANT: the output military feature geodatabase must not be open in any other application or the tool will fail with "can not obtain Schema Lock" error
->>>>>>> Updates from Testing, Added Test Drivers
 
 ## Resources
 
