@@ -271,6 +271,9 @@ class SymbolDictionary(object):
         foundSIC = False
         add2Map  = False
         symbolNameUpper = symbolName.upper() 
+        # Tricky: the Append Features Tools adds to the base name with "~" so remove all after "~"
+        # see SymbolCreator.cs/GetRuleNameFromSidc for separator character
+        symbolNameUpper = symbolNameUpper.split("~")[0] 
 
         #print ("Using Symbol " + sidc)
         if (symbolNameUpper in self.nameToSIC):

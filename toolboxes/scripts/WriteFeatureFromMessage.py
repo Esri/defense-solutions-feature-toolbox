@@ -15,8 +15,8 @@ def writeFeaturesFromMessageFile() :
     # Get the input message file
     inputFileName = arcpy.GetParameterAsText(0)
     if (inputFileName is "" or inputFileName is None):
-        inputFileName = "C:/DefenseTemplates/MilitaryFeatures/Utilities/MilitaryFeatureConverters/TestData/Mil2525CMessages.xml"
-
+        inputFileName = os.path.join(MilitaryUtilities.dataPath, r"/messages/Mil2525CMessages.xml")
+                
     if not os.path.isfile(inputFileName) :
         arcpy.AddError("Bad Input")
         return
@@ -26,7 +26,8 @@ def writeFeaturesFromMessageFile() :
     # Get the output feature class
     outputFC = arcpy.GetParameter(1)
     if (outputFC is "" or outputFC is None):
-        outputFC = "C:/DefenseTemplates/MilitaryFeatures/Utilities/MilitaryFeatureConverters/TestData/Default.gdb/FriendlyOperationsL_Test_3857" 
+        outputFC = os.path.join(MilitaryUtilities.geoDatabasePath, r"/test_outputs.gdb/FriendlyOperations/FriendlyUnits")
+        
     desc = arcpy.Describe(outputFC)
     if desc == None :
         print "Bad Output Dataset" + outputFC 
@@ -134,7 +135,16 @@ def writeFeaturesFromMessageFile() :
                         newRow = newRows.newRow()
                         newRow.setValue(desc.shapeFieldName, shape)
                         newRow.setValue(ruleFieldName, ruleId)
-                        newRow.setValue("sidc", sic)
+                        
+                        # both "sic" and "sidc" used
+                        try : 
+                            newRow.setValue("sic", sic)
+                        except :
+                            try :                             
+                                newRow.setValue("sidc", sic)
+                            except : 
+                                arcpy.AddWarning("Failed to set SIDC field in output")
+                            
                         # add any extra fields
                         for field in featureFields :  
                             if not (field.name in DictionaryConstants.MILFEATURES_FIELD_EXCLUDE_LIST) :

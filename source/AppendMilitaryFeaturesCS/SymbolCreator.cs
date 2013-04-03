@@ -61,11 +61,13 @@ namespace AppendMilitaryFeatures
 
             // TODO: Damaged/Destroyed
 
+            const char NAME_SEPARATOR = '~';
+
             if (HasValidEchelon(sidc))
             {
                 string echelonModifierName = GetModifierMarkerSymbolName(sidc);
                 if (!string.IsNullOrEmpty(echelonModifierName))
-                    buildName.Append("/" + echelonModifierName);
+                    buildName.Append(NAME_SEPARATOR + echelonModifierName);
             }
 
             if (sidc[0] != 'E') // none of these for EMS
@@ -79,7 +81,7 @@ namespace AppendMilitaryFeatures
                         foreach (var name in list)
                         {
                             if (!string.IsNullOrEmpty(name))
-                                buildName.Append("/" + name);
+                                buildName.Append(NAME_SEPARATOR + name);
                         }
                     }
                 }
@@ -89,7 +91,7 @@ namespace AppendMilitaryFeatures
                 {
                     string pos11and12ModifierName = GetPosition11and12MarkerSymbolName(sidc);
                     if (!string.IsNullOrEmpty(pos11and12ModifierName))
-                        buildName.Append("/" + pos11and12ModifierName);
+                        buildName.Append(NAME_SEPARATOR + pos11and12ModifierName);
                 }
             }
 

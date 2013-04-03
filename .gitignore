@@ -1,14 +1,16 @@
 
 # Defense Template specific ignores
 application/
-data/geodatabases/
-data/shapefiles/
-data/layers/
+data/
 maps/
 scratch/
 arc.dir
 *.pyt.xml
 *.zip
+*.zip
+*-old.*
+*-old
+*-sav
 
 #############
 ## Python

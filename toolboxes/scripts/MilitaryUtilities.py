@@ -7,8 +7,12 @@ import SymbolDictionary
 import GeometryConverter
 import DictionaryConstants
 
-# IMPORTANT: assumes Mil2525C.dat is same directory as .py file
-symbolDictionaryPath = os.path.join(os.path.dirname(__file__),  "Mil2525C.dat" )
+# IMPORTANT: assumes Mil2525C.dat is at ../../data/dictionary
+currentPath = os.path.dirname(__file__)
+dataPath = os.path.normpath(os.path.join(currentPath, r"../../data/"))
+dictionaryPath = os.path.normpath(os.path.join(dataPath, r"dictionary/"))
+geoDatabasePath = os.path.normpath(os.path.join(dataPath, r"geodatabases/"))
+symbolDictionaryPath = os.path.join(dictionaryPath,  "Mil2525C.dat" )
 symbolDictionary = SymbolDictionary.SymbolDictionary(symbolDictionaryPath)
 geoConverter = GeometryConverter.GeometryConverter(symbolDictionary)
 

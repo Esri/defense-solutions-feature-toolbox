@@ -10,7 +10,8 @@ import uuid
 ### Params:
 ### 0 - inputFC
 ### 1 - outputXMLFile
-### 2 - sortOrder
+### 2 - orderBy see: http://resources.arcgis.com/en/help/main/10.1/index.html#//018v00000050000000)
+###     orderBy now called sort_fields (ex: sort_fields="STATE_NAME A; POP2000 D")
 
 appendFile = False
 DEBUG_GEOMETRY_CONVERSION = False # True # switch to bypass geometry conversion to keep feature at original placement
@@ -22,8 +23,7 @@ def writeMessageFile() :
         # Get input feature class
         inputFC = arcpy.GetParameter(0)
         if (inputFC is "" or inputFC is None):
-            inputFC = os.path.join(os.path.dirname(__file__),  "TestData/LorraineTest.gdb/FriendlyOperations/FriendlyOperationsL")
-#            inputFC = os.path.join(os.path.dirname(__file__),  "TestData/LorraineTest.gdb/FriendlyOperations/FriendlyOperationsA")
+            inputFC = os.path.join(MilitaryUtilities.geoDatabasePath, r"/test_inputs.gdb/FriendlyOperations/FriendlyUnits")
         desc = arcpy.Describe(inputFC)
         if desc == None :
             arcpy.AddError("Bad Input")
@@ -156,7 +156,15 @@ def writeMessageFile() :
             else:
                 uniqueId = "{%s}" % str(uuid.uuid4())
 
-            SymbolIdCodeVal = row.getValue("sidc")
+            # work with "sidc" or "sic"
+            try : 
+                SymbolIdCodeVal = row.getValue("sic")
+            except:
+                try : 
+                    SymbolIdCodeVal = row.getValue("sidc")
+                except:     
+                    SymbolIdCodeVal = None                
+                                  
             if SymbolIdCodeVal is None:
                 msg =  "SIDC is not set - did you run CalcSIDCField first?"
                 arcpy.AddError(msg)
@@ -220,7 +228,6 @@ def writeMessageFile() :
                 if rowVal is not None:
                     fieldValAsString = str(row.getValue(field))
                     messageFile.write("\t\t<"+field+">" + fieldValAsString + "</" + field + ">\n")
-                    #attributes[field] = fieldValAsString
             ###################Common Fields/Attributes#####################
 
             messageFile.write("\t</message>\n")

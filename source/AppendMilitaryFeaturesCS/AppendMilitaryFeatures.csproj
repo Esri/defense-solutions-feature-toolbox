@@ -160,7 +160,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(TargetFileName) $(ProjectDir)..\..\application
+    <PostBuildEvent>mkdir $(ProjectDir)..\..\application
+copy $(TargetFileName) $(ProjectDir)..\..\application
 mkdir $(ProjectDir)..\..\application\Data
 copy $(TargetDir)\Data\*.* $(ProjectDir)..\..\application\Data</PostBuildEvent>
   </PropertyGroup>

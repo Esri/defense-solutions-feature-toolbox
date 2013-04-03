@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<!-- 
+ Build.xml
+ Description: Ant script used to run test drivers
+ Requirements: Java JRE, Ant, ArcGIS Desktop with ArcPy
+ Note: If your ArcGIS/Arcpy is not at default locations you will need to edit the paths below
+ -->
+
+<project name="DefenseAndIntelToolboxTest" basedir="." default="run_all_tests">
+
+  <!-- templatehome = military-feature-toolbox -->
+
+  <property name="dir.arcpy" value="C:\Python27\ArcGIS10.1"/>
+  <property name="dir.arcgisdesktop" value="C:\Program Files (x86)\ArcGIS\Desktop10.1"/>
+  <property name="dir.src" value="."/>
+  <property name="dir.datafetchdir" value="../../"/>
+
+  <property name="pythonpath" value="${dir.arcpy}\DLLs;${dir.arcpy}\lib;${dir.arcpy}\lib\plat-win;${dir.arcpy}\lib\lib-tk;${dir.arcpy};${dir.arcpy}\lib\site-packages;${dir.arcgisdesktop}\bin;${dir.arcgisdesktop}\arcpy"/>
+
+  <target name="run_all_tests" 
+    depends="get_data,test_config,test_calculate_sidc">
+    <echo message="All Tests Complete" />
+  </target>
+
+  <target name="get_data">
+    <!-- TODO: determine if we need to run data fetch script here @ ../../build.xml -->
+    <!-- TODO: for now just issue a warning -->
+    <!-- TODO: if needed, change the target in the line below to target="default" -->
+    <ant antfile="${dir.datafetchdir}/build.xml" target="test" />
+    <echo message="INFO: Has Dependent Data task been run from: ${dir.datafetchdir}/build.xml" />
+  </target>
+
+  <target name="test_config">
+    <exec executable="${dir.arcpy}/python.exe" failonerror="true">
+      <env key="PYTHONPATH" path="${pythonpath}"/>
+      <arg line="-u"/>
+      <arg line="${dir.src}/TestTemplateConfig.py"/>
+    </exec>
+  </target>
+
+  <target name="test_calculate_sidc">
+    <exec executable="${dir.arcpy}/python.exe" failonerror="true">
+      <env key="PYTHONPATH" path="${pythonpath}"/>
+      <arg line="-u"/>
+      <arg line="${dir.src}/TestCalculateSidc.py"/>
+    </exec>
+  </target>
+
+</project>
