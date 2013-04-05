@@ -1,4 +1,4 @@
-﻿# military-feature-toolbox
+# military-feature-toolbox
 
 The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
 
@@ -37,12 +37,22 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * > ant
         * Verify “Build Succeeded”  
         * This will create a directory military-feature-toolbox/data with required data files
-* Open and build the Visual Studio 2010 Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
+* Open and build the Visual Studio Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
 * (Optional) Test the command line AppendMilitaryFeatures application
     * cd military-feature-toolbox\application
-    * > AppendMilitaryFeatures.exe TestInput\tacticallines.shp TestOutput\MilitaryFeature.gdb Symbol_ID
+    * > AppendMilitaryFeatures.exe 
+    * This will verify that the necessary products 
+    * Note: this will use default values of
+        * data\shapefiles\FriendlyForcesSmall.shp 
+        * data\geodatabases\test_outputs.gdb
+        * Symbol_ID
 * Start ArcMap or ArcCatalog and run the Append Military Features Geoprocessing tool at military-feature-toolbox\toolboxes
     *  IMPORTANT: the output military feature geodatabase must not be open in any other application or the tool will fail with "can not obtain Schema Lock" error
+* To run unit tests
+    * Open Command Prompt>
+    * > cd military-feature-toolbox\source\test
+    * > ant
+    * Verify "Build Succeeded"
 
 ## Resources
 

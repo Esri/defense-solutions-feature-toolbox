@@ -113,6 +113,134 @@ namespace AppendMilitaryFeatures
             return success;
         }
 
+        /// <summary>
+        /// Set the Representation Rule ID based on sidc field of a 
+        /// Military Feature destinationGeodatabase/featurelayer
+        /// </summary>
+        /// <returns>Success: True/False</returns>
+        public bool CalculateRepRulesFromSidc(string outputMilitaryFeatureClassString)
+        {
+            bool success = false;
+
+            symbolCreator = new SymbolCreator();
+
+            militaryFeatures = new MilitaryFeatureClassHelper();
+            IFeatureClass outputFeatureClass = militaryFeatures.GetFeatureClassByName(outputMilitaryFeatureClassString);
+
+            if (!militaryFeatures.Initialized || (outputFeatureClass == null))
+            {
+                lastErrorCode = 4; detailedErrorMessage = "Output FeatureClass could not be found/opened: " + outputMilitaryFeatureClassString;
+                Console.WriteLine(detailedErrorMessage);
+                return false;
+            }
+
+            if (!militaryFeatures.IsFeatureClassLockable(outputFeatureClass))
+            {
+                // if a schema lock can't be obtained for feature class then bail on them all
+                lastErrorCode = 5; detailedErrorMessage = string.Format("Exclusive Schema Lock can not be obtained for output feature class found for Rule:{0}", outputMilitaryFeatureClassString);
+                Console.WriteLine(detailedErrorMessage);
+                return false;
+            }
+
+            ////////////////////////////////////////////////////////////
+            // Initialization/Verification complete, now do processing
+
+            repRulesWereAdded = false;
+
+            // allows testing without writing the output to the feature
+            const bool DEBUG_DONT_WRITE_OUTPUT = true;
+
+            ////////////////////////////////////////////////////////////
+            // TRICKY: Handle the 2 different output SIC/SIDC names in Military Features
+            int sicFieldIndex = outputFeatureClass.Fields.FindField(MilitaryFeatureClassHelper.SIDC_FIELD_NAME1);
+            if (sicFieldIndex < 0)
+            {
+                sicFieldIndex = outputFeatureClass.Fields.FindField(MilitaryFeatureClassHelper.SIDC_FIELD_NAME2);
+                if (sicFieldIndex < 0)
+                {
+                    lastErrorCode = 6; detailedErrorMessage = string.Format("ABORTING: Could not find SIDC field in output");
+                    Console.WriteLine(detailedErrorMessage);
+                    return false;
+                }
+            }
+            ////////////////////////////////////////////////////////////
+
+            // Start Editing
+            IWorkspaceEdit workspaceEdit = militaryFeatures.Workspace as IWorkspaceEdit;
+            if (workspaceEdit == null)
+            {
+                lastErrorCode = 5; detailedErrorMessage = string.Format("Exclusive Schema Lock can not be obtained for output feature class found for Rule:{0}", outputMilitaryFeatureClassString);
+                Console.WriteLine(detailedErrorMessage);
+                return false;
+            }
+
+            workspaceEdit.StartEditing(false);
+            workspaceEdit.StartEditOperation();
+
+            IRepresentationClass repClass = militaryFeatures.GetRepresentationClassForFeatureClass(outputFeatureClass);
+            if (repClass == null)
+            {
+                Console.WriteLine("ABORTING: RepresentationClass not found in output");
+                return false;
+            }
+
+            // setup insert cursor 
+            IFeatureCursor featureCursor = outputFeatureClass.Update(null, true);
+            IFeature currentFeature = featureCursor.NextFeature();
+
+            int featureCount = 0;
+
+            while (currentFeature != null)
+            {
+                string sidc = currentFeature.get_Value(sicFieldIndex) as string;
+
+                if (!symbolCreator.IsValidSic(sidc))
+                {
+                    if (string.IsNullOrEmpty(sidc) || (sidc.Length <= 0))
+                        Console.WriteLine("Skipping empty SIDC");
+                    else
+                        Console.WriteLine("Skipping invalid SIDC: " + sidc);
+
+                    currentFeature = featureCursor.NextFeature();
+                    continue;
+                }
+
+                featureCount++;
+
+                IFeatureBuffer featureBuffer = currentFeature as IFeatureBuffer;
+
+                processSidc(repClass, featureBuffer, sidc);
+
+                if (!DEBUG_DONT_WRITE_OUTPUT)
+                {
+                    featureCursor.UpdateFeature(currentFeature);
+                }
+
+                currentFeature = featureCursor.NextFeature();
+            }
+
+            if (!DEBUG_DONT_WRITE_OUTPUT)
+            {
+                featureCursor.Flush();
+            }
+
+            workspaceEdit.StopEditOperation();
+            workspaceEdit.StopEditing(true);
+
+            // Release the cursors to remove the lock on the data.
+            System.Runtime.InteropServices.Marshal.ReleaseComObject(featureCursor);
+            featureCursor = null;
+
+            if (!DEBUG_DONT_WRITE_OUTPUT)
+            {
+                // looks totally nonsensical - but this forces any new rules to written
+                if (repRulesWereAdded)
+                    repClass.RepresentationRules = repClass.RepresentationRules;
+            }
+
+            return success;
+        }
+
         private bool updateMatchedRules(HashSet<string> matchedRules, IFeatureClass inputFeatureClass, string sidcFieldName)
         {
             if ((mapper == null) || (inputFeatureClass == null) || (militaryFeatures == null)
@@ -349,7 +477,18 @@ namespace AppendMilitaryFeatures
                         string mapToOutputFieldName = inputName; // default output to same as input name
 
                         if (mapToOutputFieldName == sidcFieldName)
-                            mapToOutputFieldName = MilitaryFeatureClassHelper.SIDC_FIELD_NAME;
+                        {
+                            // TRICKY: Handle the 2 different output SIC/SIDC names in Military Features
+                            if (outputFeatureClass.Fields.FindField(
+                                MilitaryFeatureClassHelper.SIDC_FIELD_NAME1) >= 0)
+                                mapToOutputFieldName = MilitaryFeatureClassHelper.SIDC_FIELD_NAME1;
+                            else 
+                                if (outputFeatureClass.Fields.FindField(
+                                    MilitaryFeatureClassHelper.SIDC_FIELD_NAME2) >= 0)
+                                    mapToOutputFieldName = MilitaryFeatureClassHelper.SIDC_FIELD_NAME2;
+                                else
+                                    Console.WriteLine("WARNING: Could not find SIDC field in output");
+                        }
                         else
                             if (InputFieldToOutputFieldAllDatasets.ContainsKey(inputName))
                                 mapToOutputFieldName = InputFieldToOutputFieldAllDatasets[inputName];
@@ -527,7 +666,10 @@ namespace AppendMilitaryFeatures
         private void processSidc(IRepresentationClass repClass, IFeatureBuffer targetFeatureBuffer, string sidc)
         {
             if ((symbolCreator == null) || (repClass == null) || (targetFeatureBuffer == null))
+            {
+                Console.WriteLine("Failed to initialize - could not create RepRule for SIDC: " + sidc);
                 return;
+            }
 
             symbolCreator.Initialize();
 

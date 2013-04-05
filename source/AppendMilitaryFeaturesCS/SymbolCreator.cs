@@ -992,7 +992,7 @@ namespace AppendMilitaryFeatures
                 {
                     if (!ID2StyleGalleryItemDictionary.ContainsKey(item.Name))
                     {
-                        // SKIP APP6's for now
+                        // TODO: App6, but SKIP APP6's for now
                         if (item.Name.Contains("APP6"))
                             continue;
 
@@ -1025,7 +1025,10 @@ namespace AppendMilitaryFeatures
                                     }
 
                                     count++;
-                                    System.Diagnostics.Trace.WriteLine("#" + count + ", Item Name: " + itemName + ", SIDC: " + sidc);
+
+                                    // If debug output needed during StyleFile read:
+                                    // System.Diagnostics.Trace.WriteLine("#" + count + ", Item Name: " + itemName + ", SIDC: " + sidc);
+
                                     if (!ID2StyleGalleryItemDictionary.ContainsKey(itemName))
                                         ID2StyleGalleryItemDictionary.Add(itemName, item);
                                     SIC2SymbolNameDictionary.Add(sidc, itemName);
