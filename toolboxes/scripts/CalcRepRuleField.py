@@ -13,12 +13,13 @@
 # limitations under the License.
 #----------------------------------------------------------------------------------
 # ==================================================
-# AppendMilitaryFeatures.py
+# CalculateRepRuleField.py
 # --------------------------------------------------
 # Version: ArcGIS Desktop 10.1
 # --------------------------------------------------
 # This PY file handles the GP input and validation for
 # the Append Military Features command line tool 
+# In this case/mode Append Military Features just sets the Representation Rule 
 # ==================================================
 
 # IMPORTS ==========================================
@@ -27,9 +28,7 @@ import subprocess
 import arcpy
 
 # SCRIPT ARGUMENTS =================================
-inputTable = arcpy.GetParameterAsText(0)
-targetGeodatabase = arcpy.GetParameterAsText(1)
-sidcField = arcpy.GetParameterAsText(2)
+inputMilitaryFeature = arcpy.GetParameterAsText(0)
 
 # CONSTANTS ========================================
 
@@ -40,7 +39,7 @@ debug = True # switch off if detailed info not needed
 
 try:
     # set command line arguments - Note: need quotes("") around command line arguments (to handle spaces)
-    arguments = "\"" + str(inputTable) + "\" " + "\"" + str(targetGeodatabase) + "\" " + str(sidcField)
+    arguments = "\"" + str(inputMilitaryFeature) + "\"" 
     
     # set command string
     # AppendMilitaryFeatures.exe <inputFeatureClass> <outputGDB> [sicField]
@@ -50,7 +49,7 @@ try:
     EXE_CMD = EXE_PATH_AND_FILE + r" " + arguments
     LOG_FILENAME = os.path.join(EXE_PATH, r"log.txt")
     COMMAND_LINE = EXE_CMD + r" > " + LOG_FILENAME    
-    # Ex: COMMAND_LINE=r"AppendMilitaryFeatures.exe arg1 arg2 arg3 > c:/temp/log.txt"
+    # Ex: COMMAND_LINE=r"AppendMilitaryFeatures.exe arg1 > c:/temp/log.txt"
     
     # Run the command at a command prompt
     if debug == True: arcpy.AddMessage("Command string: \n" + str(COMMAND_LINE))
@@ -82,7 +81,7 @@ try:
         arcpy.AddError(errorDictionary[retCode])
     
     # Set output
-    arcpy.SetParameter(1,targetGeodatabase)
+    arcpy.SetParameter(1, inputMilitaryFeature)
 
 except arcpy.ExecuteError: 
     # Get the tool error messages 

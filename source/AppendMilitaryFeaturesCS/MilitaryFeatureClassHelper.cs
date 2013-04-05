@@ -16,12 +16,15 @@ namespace AppendMilitaryFeatures
         }
         private bool initialized = false;
 
-        public const string SIDC_FIELD_NAME = "sic";
+        // *2* Different SIC/SIDC Field Names (?/!)
+        public const string SIDC_FIELD_NAME1 = "sic";
+        public const string SIDC_FIELD_NAME2 = "sidc";
+
         public const string UNIQUE_ID_FIELD_NAME = "uniquedesignation";
         public const string ECHELON_FIELD = "echelon";
         public const string COUNTRY_FIELD = "countrycode";
 
-        // *2* Rule Field Names:
+        // *2* Different Rule Field Names (?/!)
         public const string RULE_FIELD_NAME1 = "ruleid";
         public const string RULE_FIELD_NAME2 = "symbolrule";
 
@@ -133,6 +136,46 @@ namespace AppendMilitaryFeatures
             return repClass;
         }
 
+        /// <summary>
+        /// Open a Feature Class from a Fully Qualified Name
+        /// </summary>
+        public IFeatureClass GetFeatureClassByName(string fullPathToFeatureClassName)
+        {
+            IFeatureClass foundFeatureClass = null;
+
+            try
+            {
+                // get the Workspace (only works with FGDB's):
+                string[] separator = new string[]{".gdb"};
+                string workspacePath = fullPathToFeatureClassName.Split(separator, StringSplitOptions.None)[0];
+                workspacePath += ".gdb";
+
+                string datasetNameAndFeatureClass = fullPathToFeatureClassName.Split(separator, StringSplitOptions.None)[1];
+ 
+                this.FullWorkspacePath = workspacePath;
+                IFeatureWorkspace ws = getWorkspace();
+
+                if (!initialized)
+                    return null;
+
+                char[] fileSeparator = new char[]{'\\'};
+                string featureDatasetName = datasetNameAndFeatureClass.Split(fileSeparator)[1];
+                string featureClassName = datasetNameAndFeatureClass.Split(fileSeparator)[2];
+
+                foundFeatureClass = GetFeatureClassByName(featureDatasetName, featureClassName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
+            return foundFeatureClass;
+        }
+
+        /// <summary>
+        /// Open a Feature Class from DatasetName, FeatureClass name
+        /// Assumes the Workspace has been proeviously set
+        /// </summary>
         public IFeatureClass GetFeatureClassByName(string featureDatasetName, string featureClassName)
         {
             IFeatureClass foundFeatureClass = null;
@@ -142,13 +185,13 @@ namespace AppendMilitaryFeatures
 
             try
             {
-                if (workspace == null)
+                if (Workspace == null)
                     return null;
 
-                IFeatureDataset inputFeatureDataset = workspace.OpenFeatureDataset(featureDatasetName);
+                IFeatureDataset inputFeatureDataset = Workspace.OpenFeatureDataset(featureDatasetName);
 
                 if (inputFeatureDataset == null)
-                    return foundFeatureClass; // = null
+                    return null;
 
                 IEnumDataset eds = inputFeatureDataset.Subsets;
                 eds.Reset();
@@ -161,6 +204,7 @@ namespace AppendMilitaryFeatures
                         if (inputFeatureClass != null)
                         {
                             foundFeatureClass = inputFeatureClass;
+                            break;
                         }
                     }
                 }
