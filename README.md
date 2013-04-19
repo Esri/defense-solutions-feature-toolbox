@@ -9,6 +9,7 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 * Specialized geoprocessing models and tools for military features including
     * Tools for importing/appending non-military feature classes into a military feature geodatabase
     * Tools for converting military features to ArcGIS Runtime messages (and visa-versa)
+	* Tools for setting the SIDC and representation rule fields on a military feature geodatabase
 
 ## Requirements
 
