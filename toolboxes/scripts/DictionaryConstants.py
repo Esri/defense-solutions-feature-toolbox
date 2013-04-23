@@ -31,7 +31,7 @@ LINE_STRING                 = "Line"
 AREA_STRING                 = "Area"
 GEOMETRY_STRING             = "Geometry"
 
-DEFAULT_POINT_SIDC = "SUGPU---------X"
+DEFAULT_POINT_SIDC = "SUGPU----------"
 DEFAULT_LINE_SIDC  = "GUGPGLB-------X"
 DEFAULT_AREA_SIDC  = "GUGPGAG-------X"
 

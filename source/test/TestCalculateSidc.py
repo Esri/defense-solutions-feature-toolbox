@@ -53,8 +53,21 @@ def RunTest():
         arcpy.CalcSIDCField_PDCAlias(inputPointsFC, sidcField, echeclonField, affiliation)
         ########################################################
         
-        # Verify the results
+        # Verify the results 
+        # That there are no blank or "Default Unknown/SUGPU----------" SIDC values
+        outputSidcsLayer = "SidcNull_layer"             
         
+        arcpy.MakeFeatureLayer_management(inputPointsFC, outputSidcsLayer)
+        query = '(' + sidcField + ' is NULL)' + ' or (' + sidcField + ' = \'SUGPU----------\')'
+        
+        arcpy.SelectLayerByAttribute_management(outputSidcsLayer, "NEW_SELECTION", query)
+        
+        nullSidcCount = int(arcpy.GetCount_management(outputSidcsLayer).getOutput(0))
+        print "Number of Null SIDC Records is: " + str(nullSidcCount)
+        
+        if (nullSidcCount > 0) :
+            print "Invalid Null SIDC Field Feature Count: " +  str(nullSidcCount)
+            raise Exception("Test Failed")         
         
         print "Test Successful"        
                 
