@@ -13,15 +13,6 @@ namespace AppendMilitaryFeatures
     {
         public SymbolCreator()
         {
-            // build dictionary for symbol ID code position 11
-            Position11ToMarkerSymbolNames.Add("A", new List<string>() { "Headquarters" });
-            Position11ToMarkerSymbolNames.Add("B", new List<string>() { "Headquarters","Task Force" });
-            Position11ToMarkerSymbolNames.Add("C", new List<string>() { "Headquarters","Feint/Dummy" });
-            Position11ToMarkerSymbolNames.Add("D", new List<string>() { "Headquarters","Feint/Dummy","Task Force" });
-            Position11ToMarkerSymbolNames.Add("E", new List<string>() { "Task Force" });
-            Position11ToMarkerSymbolNames.Add("F", new List<string>() { "Feint/Dummy" });
-            Position11ToMarkerSymbolNames.Add("G", new List<string>() { "Feint/Dummy", "Task Force" });
-            Position11ToMarkerSymbolNames.Add("H", new List<string>() { "Installation" });
         }
 
         public bool Initialized
@@ -47,55 +38,403 @@ namespace AppendMilitaryFeatures
            initialized = true;
         }
 
-        public string GetRuleNameFromSidc(string sidc)
+        public string GetRuleNameFromSidc(string sic)
         {
-            string baseName = GetGenericSymbolName(sidc);
-            if (string.IsNullOrEmpty(baseName) || (sidc.Length < 10))
+            if (string.IsNullOrEmpty(sic) || !IsValidSic(sic))
+            {
+                LogError(String.Format("Invalid SIC passed to GetMarkerSymbolFromSIC: " + sic));
+                return null;
+            }
+
+            string symbolId = sic.ToUpper();
+
+            string baseName = GetGenericSymbolName(symbolId);
+            if (string.IsNullOrEmpty(baseName) || (symbolId.Length < 10))
                 return string.Empty;
+            
+            char codingScheme = symbolId[0];
 
             // Tactical Graphics / METOC don't care about the rest
-            if ((sidc[0] == 'G') || (sidc[0] == 'W'))
+            if ((codingScheme == 'G') || (codingScheme == 'W'))
                 return baseName;
+
+            // Add Modifiers to the Name:
+            // Damaged        TaskForce
+            // Frame "X/J/K"  HeadQuarters
+            // Echelon        Mobility
+            // FeintDummy     Installation
 
             StringBuilder buildName = new StringBuilder(baseName);
 
-            // TODO: Damaged/Destroyed
-
             const char NAME_SEPARATOR = '~';
 
-            if (HasValidEchelon(sidc))
-            {
-                string echelonModifierName = GetModifierMarkerSymbolName(sidc);
-                if (!string.IsNullOrEmpty(echelonModifierName))
-                    buildName.Append(NAME_SEPARATOR + echelonModifierName);
-            }
+            string modifierName = getEchelonModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
 
-            if (sidc[0] != 'E') // none of these for EMS
-            {
-                // position 11
-                if (HasValidPosition11(sidc))
-                {
-                    var list = GetPosition11MarkerSymbolNames(sidc);
-                    if (list != null && list.Count > 0)
-                    {
-                        foreach (var name in list)
-                        {
-                            if (!string.IsNullOrEmpty(name))
-                                buildName.Append(NAME_SEPARATOR + name);
-                        }
-                    }
-                }
+            modifierName = getFrameModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
 
-                // has both position 11 and 12
-                if (HasValidPosition11and12(sidc))
-                {
-                    string pos11and12ModifierName = GetPosition11and12MarkerSymbolName(sidc);
-                    if (!string.IsNullOrEmpty(pos11and12ModifierName))
-                        buildName.Append(NAME_SEPARATOR + pos11and12ModifierName);
-                }
+            modifierName = getDamagedModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
+
+            modifierName = getFeintDummyModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
+
+            modifierName = getTaskForceModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
+
+            modifierName = getMobilityModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
+
+            modifierName = getInstallationModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
+
+            modifierName = getHeadQuartersModifierName(symbolId);
+            if (modifierName.Length > 0)
+                buildName.Append(NAME_SEPARATOR + modifierName);
+           
+            /// Planning frame a special case - names returned are meaningless and too long
+            if (((IsMatchingSic(symbolId, "^.[AGMPS].{13}$") || IsMatchingSic(symbolId, "^.{3}[A].{11}$"))))
+            {
+                buildName.Append(NAME_SEPARATOR + "Dashed Frame");
             }
 
             return buildName.ToString();
+        }
+
+        private void addMultilayerLayerByName( IMultiLayerMarkerSymbol mlms, string name)
+        {
+            if ((mlms == null) || string.IsNullOrEmpty(name))
+            {
+                LogError("Unexpected Error at addMultilayerLayerByName");
+                return;
+            }
+
+            IMarkerSymbol symbolLayer = GetMarkerSymbolByName(name);
+
+            if (symbolLayer == null)
+            {
+                LogError("Error while adding layer to MultiLayerMarkerSymbol, with Name: " + name);
+                return;
+            }
+
+            if (!AddSymbolToMultiLayerSymbol(mlms, symbolLayer))
+                LogError("Error while adding layer to MultiLayerMarkerSymbol, with Name: " + name);
+        }
+
+        /// <summary>
+        /// This method to get the Echelon modifer symbol name from a symbol ID code
+        /// </summary>
+        private string getEchelonModifierName(string symbolId)
+        {
+            try
+            {
+                // do expression, then dictionary lookup
+                string upper = symbolId.ToUpper();
+
+                char echelon = symbolId[11];
+
+                // TODO, make sure its not an installation ("H") or mobility one ("NL")
+                char s11 = symbolId[10]; // Needed for Installation/Mobility Check
+
+                if (IsMatchingSic(symbolId, @"[SO][A-Z0-9\-]{10}[A-N][A-Z0-9\-]{3}"))
+                {
+                    return Echelon2MarkerSymbolName[echelon.ToString()];
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception while GetEchelonModifierName: " + ex.Message);
+            }
+
+            return String.Empty;
+        }
+
+        private void addEchelon(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            // echelon
+            if (!HasValidEchelon(symbolId))
+                return;
+
+            string modifierName = getEchelonModifierName(symbolId);
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getHeadQuartersModifierName(string symbolId)
+        {
+            string modifierName = string.Empty;
+
+            if (symbolId.Length < 12)
+                return modifierName;
+
+            char codingScheme = symbolId[0];
+            char s11 = symbolId[10];
+
+            // Check for Unit, Equipment, Installation
+            // If it is not one of these, we are done
+            if (!((codingScheme == 'S') || (codingScheme == 'I') || (codingScheme == 'O')))
+                return modifierName;
+
+            // Check for HQ
+            // If it is not one of these, we are done
+            if (!((s11 == 'A') || (s11 == 'B') || (s11 == 'C') || s11 == ('D')))
+                return modifierName;
+
+            // get frame + affil character
+            char frame = symbolId[1];
+            char affiliation = replaceSecondCharacter(frame);
+
+            switch (affiliation)
+            {
+                case 'F': modifierName = "Headquarters Staff F"; break;
+                case 'H': modifierName = "Headquarters Staff H"; break;
+                case 'N': modifierName = "Headquarters Staff N"; break;
+                case 'U': modifierName = "Headquarters Staff U"; break;
+                default: break;
+            }
+
+            return modifierName;
+        }
+
+        private void addHeadQuarters(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getHeadQuartersModifierName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getFrameModifierName(string symbolId)
+        {
+            string modifierName = string.Empty;
+
+            // Position 1 if it is SIOE
+            // Position 2 if it is DGJKLMW
+            if (!IsMatchingSic(symbolId, @"^[SIOE][DGJKLMW].{13}$"))
+                return modifierName;
+
+            // Add 'X', 'J', 'K' to frame
+            char codingScheme = symbolId[0];
+
+            // SIC[0] = Coding Scheme/Appendix, if it is not one of these, we are done
+            if (!((codingScheme == 'S') || (codingScheme == 'I') || (codingScheme == 'O') ||
+                      (codingScheme == 'E') ))
+                    return modifierName;
+
+            char frame = symbolId[1];
+
+            switch (frame)
+            {
+            case 'G':
+            case 'W':
+            case 'D':
+            case 'L':
+            case 'M':
+                // "X" - Exercise Frame Modifer
+                modifierName = "Exercise Modifier F";
+                break;
+            case 'J':
+                // "J" - Joker
+                modifierName = "Joker";
+                break;
+            case 'K':
+                // "K" - Faker
+                modifierName = "Faker";
+                break;
+            default:
+                break;
+            }
+
+            return modifierName;
+        }
+
+        private void addFrameModifier(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getFrameModifierName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getDashedFrameName(string symbolId)
+        {
+            if (!((IsMatchingSic(symbolId, "^.[AGMPS].{13}$") || IsMatchingSic(symbolId, "^.{3}[A].{11}$"))))
+                return string.Empty;
+
+            char frame = symbolId[1];
+            char affiliation = SecondCharacterMapPlanning[frame];
+            char char5 = symbolId[4];
+
+            StringBuilder dashedSIC = new StringBuilder();
+            dashedSIC.Append(symbolId[0]);
+            dashedSIC.Append(affiliation);
+            dashedSIC.Append(symbolId[2]);
+
+            if (affiliation == 'N')
+                dashedSIC.Append('A');
+            else
+                dashedSIC.Append('P');
+
+            if ((affiliation == 'A') && ((char5 == 'E') || (char5 == 'U')))
+                dashedSIC.Append(char5);
+
+            string id = dashedSIC.ToString();
+            if (SIC2SymbolNameDictionary.ContainsKey(id))
+            {
+                return SIC2SymbolNameDictionary[id];
+            }
+
+            return string.Empty;
+        }
+
+        private void addDashedFrame(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getDashedFrameName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getDamagedModifierName(string symbolId)
+        {
+            string modifierName = string.Empty;
+
+            // Position 1 if it is SIO
+            // Position 4 if it is D, C, X, or F
+            if (!IsMatchingSic(symbolId, @"^[SIO].{2}[DCXF].{11}$"))
+                return modifierName;
+
+            char opCondition = symbolId[3];
+
+            switch (opCondition)
+            {
+                case 'D':
+                    modifierName = "Damaged";
+                    break;
+                case 'C':
+                    modifierName = "Fully Capable";
+                    break;
+                case 'X':
+                    modifierName = "Destroyed";
+                    break;
+                case 'F':
+                    modifierName = "Full to Capacity";
+                    break;
+                default:
+                    break;
+            }
+
+            return modifierName;
+        }
+
+        private void addDamaged(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getDamagedModifierName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getFeintDummyModifierName(string symbolId)
+        {
+            string modifierName = string.Empty;
+
+            // Position 1 if it is SIO
+            // Position 4 if it is D, C, X, or F
+            if (!IsMatchingSic(symbolId, @"^[SIO].{2}[DCXF].{11}$"))
+                return modifierName;
+
+            // TODO
+
+            return modifierName;
+        }
+
+        private void addFeintDummy(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getFeintDummyModifierName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getTaskForceModifierName(string symbolId)
+        {
+            string modifierName = string.Empty;
+
+            // TODO
+
+            return modifierName;
+        }
+
+        private void addTaskForce(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getTaskForceModifierName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getMobilityModifierName(string symbolId)
+        {
+            string modifierName = string.Empty;
+
+            // Position 1 if it is SIO
+            // Position 4 if it is D, C, X, or F
+            if (!IsMatchingSic(symbolId, @"^[SOE].{2}[DCXF].{11}$"))
+                return modifierName;
+
+            //MobilityToMarkerSymbolName 
+            //{{"O","Wheeled (Limited Cross Country)"},
+            //    {"P","Wheeled (Cross Country)"},
+            //    {"Q","Tracked"},
+            //    {"R","Wheeled and Tracked"},
+            //    {"S","Towed"},
+            //    {"T","Railway"},
+            //    {"U","Over Snow"},
+            //    {"V","Sled"},
+            //    {"W","Pack Animals"},
+            //    {"X","Barge"},
+            //    {"Y","Amphibious"}};
+
+            return modifierName;
+        }
+
+        private void addMobility(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getMobilityModifierName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
+        }
+
+        private string getInstallationModifierName(string symbolId)
+        {
+            string modifierName = string.Empty;
+
+            // Position 1 must be SOE
+            // Position 11 must be H
+            if (!IsMatchingSic(symbolId, @"[SOE][A-Z0-9\-]{10}[H][A-Z0-9\-]{3}"))
+                return modifierName;
+
+            // TODO
+
+            return modifierName;
+        }
+
+        private void addInstallation(string symbolId, IMultiLayerMarkerSymbol mlms)
+        {
+            string modifierName = getInstallationModifierName(symbolId);
+
+            if (modifierName.Length > 0)
+                addMultilayerLayerByName(mlms, modifierName);
         }
 
         /// <summary>
@@ -105,170 +444,68 @@ namespace AppendMilitaryFeatures
         /// <returns></returns>
         public IMarkerSymbol GetMarkerSymbolFromSIC(string sic)
         {
-            if (string.IsNullOrEmpty(sic))
+            if (string.IsNullOrEmpty(sic) || !IsValidSic(sic))
+            {
+                LogError(String.Format("Invalid SIC passed to GetMarkerSymbolFromSIC: " + sic));
                 return null;
+            }
 
+            string symbolId = sic.ToUpper();
+
+            // addCentralIconId
             IMarkerSymbol result = null;
-            IMarkerSymbol ms = GetGenericMarkerSymbolFromSIC(sic);
+            IMarkerSymbol ms = GetGenericMarkerSymbolFromSIC(symbolId);
 
-            if ((sic[0] == 'G') || (sic[0] == 'W'))
+            if (ms == null)
+            {
+                LogError(String.Format("Generic MarkerSymbol returned null when loading for sic : {0}", symbolId));
+                return null;
+            }
+
+            // workaround for the Marker symbol problem where the symbol size randomly loads at size 8 instead of 25
+            if (ms.Size < 25)
+            {
+                ms.Size = 25;
+            }
+
+            char codingScheme = symbolId[0];
+
+            // Done if Tactical Graphic
+            if ((codingScheme == 'G') || (codingScheme == 'W'))
                 return ms;
 
-            // create the graphic element for the marker symbol and add it to the map
-            if (ms != null)
+            IMultiLayerMarkerSymbol mlms = new MultiLayerMarkerSymbolClass();
+            mlms.ClearLayers();
+
+            // workaround for the Marker symbol problem where the symbol size randomly loads at size 8 instead of 25
+            if (mlms.Size != 25)
             {
-                // workaround for the Marker symbol problem where the symbol size randomly loads at size 8 instead of 25
-                if (ms.Size < 25)
-                {
-                    ms.Size = 25;
-                }
-                IMultiLayerMarkerSymbol mlms = new MultiLayerMarkerSymbolClass();
-                mlms.ClearLayers();
-
-                // workaround for the Marker symbol problem where the symbol size randomly loads at size 8 instead of 25
-                //if (mlms.Size != 25)
-                //{
-                //    mlms.Size = 25;
-                //}
-
-                // moved the addition of generic frame symbol to the end so that it draws on top
-
-                // Position 4 if it is D, C, X, or F
-                if (IsValidSicBase(sic, @"^.{3}[DCXF].{11}$"))
-                {
-                    IMarkerSymbol StrengthSymbol = null;
-                    string strengthName = "";
-
-                    // get the name of the symbol
-                    switch (sic[3])
-                    {
-                        case 'D':
-                            strengthName = "Damaged";
-                            break;
-                        case 'C':
-                            strengthName = "Fully Capable";
-                            break;
-                        case 'X':
-                            strengthName = "Destroyed";
-                            break;
-                        case 'F':
-                            strengthName = "Full to Capacity";
-                            break;
-                        default:
-                            break;
-                    }
-
-                    // get the marker symbol for that name
-                    if (!String.IsNullOrEmpty(strengthName))
-                    {
-                        StrengthSymbol = GetMarkerSymbolByName(strengthName);
-
-                        if (StrengthSymbol != null)
-                        {
-                            if (!AddSymbolToMultiLayerSymbol(mlms, StrengthSymbol))
-                            {
-                                LogError(String.Format("Error while adding strength modifier layer to MultiLayerMarkerSymbol, SIC : {0}", sic));
-                            }
-                        }
-                    }
-                }
-
-                // echelon
-                if (HasValidEchelon(sic))
-                {
-                    IMarkerSymbol EchelonModifierSymbol = GetMarkerSymbolByName(GetModifierMarkerSymbolName(sic));
-                    if (EchelonModifierSymbol != null)
-                    {
-                        if (!AddSymbolToMultiLayerSymbol(mlms, EchelonModifierSymbol))
-                        {
-                            LogError(String.Format("Error while adding echelon layer to MultiLayerMarkerSymbol, SIC : {0}", sic));
-                        }
-                    }
-                }
-
-                // position 11
-
-                if (HasValidPosition11(sic))
-                {
-                    var list = GetPosition11MarkerSymbolNames(sic);
-                    if (list != null && list.Count > 0)
-                    {
-                        foreach (var name in list)
-                        {
-                            IMarkerSymbol s = GetMarkerSymbolByName(name);
-                            if (s != null)
-                            {
-                                if (!AddSymbolToMultiLayerSymbol(mlms, s))
-                                {
-                                    LogError(String.Format("Error while adding pos 11 modifier layer to MultiLayerMarkerSymbol, SIC : {0}", sic));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // position 11 and 12
-
-                if (HasValidPosition11and12(sic))
-                {
-                    IMarkerSymbol s = GetMarkerSymbolByName(GetPosition11and12MarkerSymbolName(sic));
-                    if (s != null)
-                    {
-                        if (!AddSymbolToMultiLayerSymbol(mlms, s))
-                        {
-                            LogError(String.Format("Error while adding pos 11/12 modifier layer to MultiLayerMarkerSymbol, SIC : {0}", sic));
-                        }
-                    }
-                }
-
-                // add generic frame marker symbol
-                if (!AddSymbolToMultiLayerSymbol(mlms, ms))
-                {
-                    LogError(String.Format("Error when adding generic SIC marker symbol to the main multilayer marker symbol, {0}", sic));
-                }
-
-                IMapLevel mapLevel = mlms as IMapLevel;
-                IMapLevel levelma = ms as IMapLevel;
-
-                // is symbol ID code anticipated/planned (A is position 4) or assumed friend, exercise, suspect, pending, etc (in position 2)
-                if (IsValidSicBase(sic, "^.[PASGM].{13}$") || IsValidSicBase(sic, "^.{3}[A].{11}$"))
-                {
-                    // load dashed frame and add to layer
-
-                    string dashedSIC = "";
-
-                    if (IsValidSicBase(sic, @".{4}[EIU].{10}") == true)
-                    {
-                        dashedSIC += sic.Substring(0, 5);
-                    }
-                    else
-                    {
-                        dashedSIC += sic.Substring(0, 4) + "-";
-                    }
-
-                    dashedSIC += "----------";
-
-                    if (SIC2SymbolNameDictionary.ContainsKey(dashedSIC))
-                    {
-                        IMarkerSymbol dashedms = GetMarkerSymbolByName(SIC2SymbolNameDictionary[dashedSIC]);
-
-                        if (!AddSymbolToMultiLayerSymbol(mlms, dashedms))
-                        {
-                            LogError(String.Format("Error while adding dashed layer to MultiLayerMarkerSymbol, SIC : {0}", dashedSIC));
-                        }
-                    }
-                    else
-                    {
-                        LogError(String.Format("Error, SIC to SymbolName dictionary does not contain key, {0}", dashedSIC));
-                    }
-                }
-
-                result = mlms as IMarkerSymbol;
+                mlms.Size = 25;
             }
-            else
+
+            // add base symbol
+            if (!AddSymbolToMultiLayerSymbol(mlms, ms))
             {
-                LogError(String.Format("Generic MarkerSymbol returned null when loading for sic : {0}", sic));
+                LogError(String.Format("Error when adding generic SIC marker symbol to the main multilayer marker symbol, {0}", symbolId));
             }
+
+            addDamaged(symbolId, mlms);
+            addFrameModifier(symbolId, mlms);
+            addEchelon(symbolId, mlms);
+            addFeintDummy(symbolId, mlms);
+            addTaskForce(symbolId, mlms);
+            addHeadQuarters(symbolId, mlms);
+            addMobility(symbolId, mlms);
+            addInstallation(symbolId, mlms);
+
+            // Lastly add dashed frame:
+            addDashedFrame(symbolId, mlms);
+
+            // TODO: if needed
+            IMapLevel mapLevel = mlms as IMapLevel;
+            IMapLevel levelma = ms as IMapLevel;
+
+            result = mlms as IMarkerSymbol;
 
             return result;
         }
@@ -295,6 +532,7 @@ namespace AppendMilitaryFeatures
 
             return GetMarkerSymbolByName(genericName);
         }
+
         /// <summary>
         /// Method provides a way to get the Representation Rule ID from the symbol ID code
         /// </summary>
@@ -316,6 +554,7 @@ namespace AppendMilitaryFeatures
 
             return SIC2RuleID[GetMaskedTGSIC(sic)];
         }
+
         /// <summary>
         /// Method masks out a symbol ID code if needed for proper lookup
         /// </summary>
@@ -355,23 +594,32 @@ namespace AppendMilitaryFeatures
         {
             try
             {
-                if (sic.Length < 10)
+                if ((sic.Length < 10) || !IsValidSic(sic))
+                {
+                    LogError("Invalid SIC passed to GetMarkerSymbolFromSIC: " + sic);
                     return string.Empty;
+                }
 
                 // added to support the old standard installations symbol ID code
-                string temp = (sic.Substring(0, 10) + ((IsValidSicInstallation(sic) == true) ? "H----" : "-----")).ToUpper();
+                string symbolId = (sic.Substring(0, 10) + ((IsValidSicInstallation(sic) == true) ? "H----" : "-----")).ToUpper();
+
+//**********************
+// TODO: Go over this method and verify, looks like some problems
+//**********************
+                char codingScheme = symbolId[0];
+
                 StringBuilder sb;
-                if (temp[0] == 'G')
+                if (codingScheme == 'G')
                 {
                     // Style file Tactical Graphics have multiple conventions: 1:"G-XX", 2:"G<Afilliation>XX", 3:"GFXX"
                     // must check for all 3
 
                     // 1: "-" for affiliation
-                    sb = new StringBuilder(GetMaskedTGSIC(temp));
+                    sb = new StringBuilder(GetMaskedTGSIC(symbolId));
 
                     // 2: use affilation
                     if (!SIC2SymbolNameDictionary.ContainsKey(sb.ToString()))
-                        sb[1] = temp[1];
+                        sb[1] = symbolId[1];
 
                     // 3: use "F" affilitation (some markers only have "F" version)
                     if (!SIC2SymbolNameDictionary.ContainsKey(sb.ToString()))
@@ -381,42 +629,24 @@ namespace AppendMilitaryFeatures
                 {
                     // need to check for assumed friend and anticipated/planned, change to load the generic frame as if it were friendly and/or present
 
-                    sb = new StringBuilder(temp);
+                    sb = new StringBuilder(symbolId);
 
                     sb.Remove(1, 1);
 
-                    if (temp[0] == 'E' && temp[2] == 'N') // Natural Event special case, second pos needs to be a '-'
+                    if (codingScheme == 'E' && symbolId[2] == 'N') // Natural Event special case, second pos needs to be a '-'
                     {
                         sb.Insert(1, "-");
                     }
                     else
                     {
-                        switch (temp[1])
-                        {
-                            case 'P':
-                            case 'G':
-                            case 'W':
-                                sb.Insert(1, "U");
-                                break;
-                            case 'A':
-                            case 'D':
-                            case 'M':
-                                sb.Insert(1, "F");
-                                break;
-                            case 'S':
-                                sb.Insert(1, "H");
-                                break;
-                            case 'L':
-                                sb.Insert(1, "N");
-                                break;
-                            default:
-                                sb.Insert(1, temp[1]);
-                                break;
-                        }
+                        if (codingScheme == 'W')
+                            sb.Insert(1, symbolId[1]);
+                        else
+                            sb.Insert(1, replaceSecondCharacter(symbolId[1]));
                     }
 
                     // Force pos 4 to P (if not 'W'/METOC)
-                    if (temp[3] != 'W')
+                    if (codingScheme != 'W')
                     {
                         sb.Remove(3, 1);
                         sb.Insert(3, "P");
@@ -475,7 +705,7 @@ namespace AppendMilitaryFeatures
         }
 
         /// <summary>
-        /// This mehtod will get the modifer marker symbol name from a symbol ID code
+        /// This method will get the modifer marker symbol name from a symbol ID code
         /// </summary>
         /// <param name="sic"></param>
         /// <returns></returns>
@@ -502,100 +732,19 @@ namespace AppendMilitaryFeatures
             return cc1.ToString() + cc2.ToString();
         }
 
-        /// <summary>
-        /// This mehtod will get the modifer marker symbol name from a symbol ID code
-        /// </summary>
-        /// <param name="sic"></param>
-        /// <returns></returns>
-        private string GetModifierMarkerSymbolName(string sic)
-        {
-            // do expression, then dictionary lookup
-
-            string temp = sic.ToUpper();
-
-            if (System.Text.RegularExpressions.Regex.IsMatch(temp, @"[SO][A-Z0-9\-]{10}[A-N][A-Z0-9\-]{3}"))
-            {
-                return Echelon2MarkerSymbolName[temp[11].ToString()];
-            }
-
-            return "Not defined";
-        }
-
-        private List<string> GetPosition11MarkerSymbolNames(string sic)
-        {
-            if (HasValidPosition11(sic))
-            {
-                // we added other symbols (HQ) that need another check here first before the generic modifers are returned
-
-                if (IsValidSicBase(sic, @"[SO].{9}[B-D].{4}") == true)
-                {
-                    string temp = "";
-
-                    // pos 1-3
-                    if (sic[0] == 'S')
-                    {
-                        temp += sic.Substring(0, 3);
-                    }
-                    else
-                    {
-                        temp += sic.Substring(0, 2) + "-";
-                    }
-
-                    // pos 4
-                    temp += "-";
-
-                    // pos 5
-                    if (IsValidSicBase(sic, @".{4}[EIU].{10}") == true)
-                    {
-                        temp += sic[4];
-                    }
-                    else
-                    {
-                        temp += "-";
-                    }
-
-                    // pos 6-10, 11, 12-15
-                    temp += "-----" + sic[10] + "----";
-
-                    if (!SIC2SymbolNameDictionary.ContainsKey(temp))
-                    {
-                        LogError(String.Format("Error, SIC to symbol dictionary does not contain key, {0}", temp));
-                        return new List<string>();
-                    }
-
-                    return new List<string>() { SIC2SymbolNameDictionary[temp] };
-                }
-
-                // return the list of modifiers based on position 11 only
-                return Position11ToMarkerSymbolNames[sic[10].ToString().ToUpper()];
-            }
-
-            return null;
-        }
-
-        private string GetPosition11and12MarkerSymbolName(string sic)
-        {
-            if (HasValidPosition11and12(sic))
-            {
-                return Position11and12ToMarkerSymbolName[sic[11].ToString().ToUpper()];
-            }
-
-            return "Not defined";
-        }
-
         public bool HasValidEchelon(string sic)
         {
-            return IsValidSicBase(sic, @".{11}[A-N].{3}");
+            return IsMatchingSic(sic, @".{11}[A-N].{3}");
         }
 
         private bool HasValidPosition11(string sic)
         {
-            return IsValidSicBase(sic, @".{10}[A-H].{4}");
+            return IsMatchingSic(sic, @".{10}[A-H].{4}");
         }
 
         private bool HasValidPosition11and12(string sic)
         {
-            return IsValidSicBase(sic, @".{10}[M][O-Y].{3}");
+            return IsMatchingSic(sic, @".{10}[M][O-Y].{3}");
         }
 
         /// <summary>
@@ -626,88 +775,88 @@ namespace AppendMilitaryFeatures
         // simple SIC checker
         public bool IsValidSic(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.{15}$");
+            return IsMatchingSic(sicString, ValidSicExpression);
         }
 
         public bool IsValidSicFriendly(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[F].{13}$");
+            return IsMatchingSic(sicString, @"^.[F].{13}$");
         }
         public bool IsValidSicHostile(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[H].{13}$");
+            return IsMatchingSic(sicString, @"^.[H].{13}$");
         }
         public bool IsValidSicNeutral(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[N].{13}$");
+            return IsMatchingSic(sicString, @"^.[N].{13}$");
         }
         public bool IsValidSicUnknown(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[U].{13}$");
+            return IsMatchingSic(sicString, @"^.[U].{13}$");
         }
         public bool IsValidSicPending(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[P].{13}$");
+            return IsMatchingSic(sicString, @"^.[P].{13}$");
         }
         public bool IsValidSicAssumedFriend(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[A].{13}$");
+            return IsMatchingSic(sicString, @"^.[A].{13}$");
         }
         public bool IsValidSicSuspect(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[S].{13}$");
+            return IsMatchingSic(sicString, @"^.[S].{13}$");
         }
         public bool IsValidSicExercisePending(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[G].{13}$");
+            return IsMatchingSic(sicString, @"^.[G].{13}$");
         }
         public bool IsValidSicExerciseUnknown(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[W].{13}$");
+            return IsMatchingSic(sicString, @"^.[W].{13}$");
         }
         public bool IsValidSicExerciseAssumedFriend(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[M].{13}$");
+            return IsMatchingSic(sicString, @"^.[M].{13}$");
         }
         public bool IsValidSicExerciseFriend(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[D].{13}$");
+            return IsMatchingSic(sicString, @"^.[D].{13}$");
         }
         public bool IsValidSicExerciseNeutral(string sicString)
         {
-            return IsValidSicBase(sicString, @"^.[L].{13}$");
+            return IsMatchingSic(sicString, @"^.[L].{13}$");
         }
 
         public bool IsValidSicUnit(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[S][FHNUPASGWMDL][AFGPSUXZ][APCDXF](?(?<=..G.)(U)|(.)).{10}$");
+            return IsMatchingSic(sicString, @"^[S][FHNUPASGWMDL][AFGPSUXZ][APCDXF](?(?<=..G.)(U)|(.)).{10}$");
         }
 
         public bool IsValidSicEquipment(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[S][FHNUPASGWMDL][PAGSU][APCDXF](?(?<=..G.)(E)|(.)).{10}$");
+            return IsMatchingSic(sicString, @"^[S][FHNUPASGWMDL][PAGSU][APCDXF](?(?<=..G.)(E)|(.)).{10}$");
         }
 
         public bool IsValidSicInstallation(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[S].[G].[I].{10}$");
+            return IsMatchingSic(sicString, @"^[S].[G].[I].{10}$");
         }
         public bool IsValidSicMETOCPoint(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[W].{9}[P][-][-].{2}$");
+            return IsMatchingSic(sicString, @"^[W].{9}[P][-][-].{2}$");
         }
         public bool IsValidSicMETOCLine(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[W].{9}[-][L][-].{2}$");
+            return IsMatchingSic(sicString, @"^[W].{9}[-][L][-].{2}$");
         }
         public bool IsValidSicMETOCArea(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[W].{9}[-][-][A].{2}$");
+            return IsMatchingSic(sicString, @"^[W].{9}[-][-][A].{2}$");
         }
 
         public bool IsValidSicSIGINT(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[I].{14}$");
+            return IsMatchingSic(sicString, @"^[I].{14}$");
         }
 
         public bool IsValidSicMOPoint(string sicString)
@@ -716,74 +865,75 @@ namespace AppendMilitaryFeatures
             {
                 return false;
             }
+
             // position 3 is T
-            if (IsValidSicBase(sicString, @"^[G].[T][ASPK][DIN].{10}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[T][ASPK][DIN].{10}$")) 
             {
                 return true;
             }
 
             // position 3 is G
-
-            if (IsValidSicBase(sicString, @"^[G].[G][ASPK][GADOS][P].{9}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[G][ASPK][GADOS][P].{9}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[G][ASPK][P][N].{9}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[G][ASPK][P][N].{9}$"))  
             {
                 return true;
             }
 
             // position 3 is M
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][A][O].{8}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][A][O].{8}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][BM].{9}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][BM].{9}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][F][S].{8}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][F][S].{8}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][S][EFSU].{9}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][S][EFSU].{9}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][N][ZFED].{9}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][N][ZFED].{9}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK].[H][T].{8}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK].[H][T].{8}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK].[C][P].{8}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK].[C][P].{8}$"))  
             {
                 return true;
             }
             // position 3 is F
-            if (IsValidSicBase(sicString, @"^[G].[F][ASPK][P].{10}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[F][ASPK][P].{10}$"))  
             {
                 return true;
             }
             // position 3 is S
-            if (IsValidSicBase(sicString, @"^[G].[S][ASPK][P].{10}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[S][ASPK][P].{10}$"))  
             {
                 return true;
             }
             // position 3 is O
-            if (IsValidSicBase(sicString, @"^[G].[O][ASPK][ESF].{10}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[O][ASPK][ESF].{10}$"))  
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[O][ASPK][H][MIO].{9}$"))  
+            if (IsMatchingSic(sicString, @"^[G].[O][ASPK][H][MIO].{9}$"))  
             {
                 return true;
             }
 
             return false;
         }
+
         public bool IsValidSicMOLine(string sicString)
         {
             if (!IsValidSic(sicString))
@@ -791,70 +941,71 @@ namespace AppendMilitaryFeatures
                 return false;
             }
             // position 3 is T
-            if (IsValidSicBase(sicString, @"^[G].[T][ASPK][^DIN].{10}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[T][ASPK][^DIN].{10}$")) 
             {
                 return true;
             }
             // position 3 is G
-            if (IsValidSicBase(sicString, @"^[G].[G][ASPK][GADOS][L].{9}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[G][ASPK][GADOS][L].{9}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[G][ASPK][P][DAF].{9}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[G][ASPK][P][DAF].{9}$")) 
             {
                 return true;
             }
             // position 3 is M
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][G][L].{8}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][G][L].{8}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][A][DRW].{8}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][A][DRW].{8}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][SEWTR].{9}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][SEWTR].{9}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][F][G].{8}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][F][G].{8}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK].[H][O].{8}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK].[H][O].{8}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][S][LW].{9}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][S][LW].{9}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK].[C][ABFEDLR].{8}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK].[C][ABFEDLR].{8}$")) 
             {
                 return true;
             }
             // position 3 is F
-            if (IsValidSicBase(sicString, @"^[G].[F][ASPK][L].{10}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[F][ASPK][L].{10}$")) 
             {
                 return true;
             }
             // position 3 is S
-            if (IsValidSicBase(sicString, @"^[G].[S][ASPK][L].{10}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[S][ASPK][L].{10}$")) 
             {
                 return true;
             }
             // position 3 is O
-            if (IsValidSicBase(sicString, @"^[G].[O][ASPK][B].{10}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[O][ASPK][B].{10}$")) 
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[O][ASPK][H][N].{9}$")) 
+            if (IsMatchingSic(sicString, @"^[G].[O][ASPK][H][N].{9}$")) 
             {
                 return true;
             }
 
             return false;
         }
+
         public bool IsValidSicMOArea(string sicString)
         {
             if (!IsValidSic(sicString))
@@ -862,42 +1013,42 @@ namespace AppendMilitaryFeatures
                 return false;
             }
             // position 3 is G
-            if (IsValidSicBase(sicString, @"^[G].[G][ASPK][GADOS][A].{9}$"))
+            if (IsMatchingSic(sicString, @"^[G].[G][ASPK][GADOS][A].{9}$"))
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[G][ASPK][P][MYN].{9}$"))
+            if (IsMatchingSic(sicString, @"^[G].[G][ASPK][P][MYN].{9}$"))
             {
                 return true;
             }
             // position 3 is M
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][G][BZFR].{8}$"))
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][G][BZFR].{8}$"))
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][U].{9}$"))
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][U].{9}$"))
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][O][F][DA].{8}$"))
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][O][F][DA].{8}$"))
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][S][P].{9}$"))
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][S][P].{9}$"))
             {
                 return true;
             }
-            if (IsValidSicBase(sicString, @"^[G].[M][ASPK][N][RBCL].{9}$"))
+            if (IsMatchingSic(sicString, @"^[G].[M][ASPK][N][RBCL].{9}$"))
             {
                 return true;
             }
             // position 3 is F
-            if (IsValidSicBase(sicString, @"^[G].[F][ASPK][A].{10}$"))
+            if (IsMatchingSic(sicString, @"^[G].[F][ASPK][A].{10}$"))
             {
                 return true;
             }
             // position 3 is S
-            if (IsValidSicBase(sicString, @"^[G].[S][ASPK][A].{10}$"))
+            if (IsMatchingSic(sicString, @"^[G].[S][ASPK][A].{10}$"))
             {
                 return true;
             }
@@ -907,51 +1058,51 @@ namespace AppendMilitaryFeatures
 
         public bool IsValidSicSOViolentActivities(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[O].[V].{12}$");
+            return IsMatchingSic(sicString, @"^[O].[V].{12}$");
         }
         public bool IsValidSicSOLocations(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[O].[L].{12}$");
+            return IsMatchingSic(sicString, @"^[O].[L].{12}$");
         }
         public bool IsValidSicSOOperations(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[O].[O].{12}$");
+            return IsMatchingSic(sicString, @"^[O].[O].{12}$");
         }
         public bool IsValidSicSOItems(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[O].[I].{12}$");
+            return IsMatchingSic(sicString, @"^[O].[I].{12}$");
         }
         public bool IsValidSicSOIndividual(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[O].[P].{12}$");
+            return IsMatchingSic(sicString, @"^[O].[P].{12}$");
         }
         public bool IsValidSicSONon(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[O].[G].{12}$");
+            return IsMatchingSic(sicString, @"^[O].[G].{12}$");
         }
         public bool IsValidSicSORape(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[O].[R].{12}$");
+            return IsMatchingSic(sicString, @"^[O].[R].{12}$");
         }
 
         public bool IsValidSicEMIncident(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[E].[I].{12}$");
+            return IsMatchingSic(sicString, @"^[E].[I].{12}$");
         }
         public bool IsValidSicEMNaturalEvents(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[E].[N].{12}$");
+            return IsMatchingSic(sicString, @"^[E].[N].{12}$");
         }
         public bool IsValidSicEMOperations(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[E].[O].{12}$");
+            return IsMatchingSic(sicString, @"^[E].[O].{12}$");
         }
         public bool IsValidSicEMInfrastructure(string sicString)
         {
-            return IsValidSicBase(sicString, @"^[E].[F].{12}$");
+            return IsMatchingSic(sicString, @"^[E].[F].{12}$");
         }
 
-        private bool IsValidSicBase(string sicString, string expression)
+        private bool IsMatchingSic(string sicString, string expression)
         {
             if ((String.IsNullOrEmpty(sicString)) || (sicString.Length != 15) || String.IsNullOrEmpty(expression))
             {
@@ -1136,7 +1287,7 @@ namespace AppendMilitaryFeatures
 
         private void LogError(string msg)
         {
-            // Console.WriteLine(msg);
+            Console.WriteLine(msg);
 
             // Log to file:
             //using (TextWriter w = File.AppendText("AppendMilitaryFeaturesLog.txt"))
@@ -1169,6 +1320,52 @@ namespace AppendMilitaryFeatures
             {"M","Region"},
             {"N","Command"}};
 
+        char replaceSecondCharacter(char char2)
+        {
+            if (SecondCharacterMap.ContainsKey(char2))
+                return SecondCharacterMap[char2];
+            else
+                return '-';
+        }
+
+        private Dictionary<char, char> SecondCharacterMap = new Dictionary<char, char>() 
+            { {'F', 'F'},
+              {'H', 'H'},
+              {'U', 'U'},
+              {'N', 'N'},
+              {'M', 'F'},
+              {'A', 'F'},
+              {'D', 'F'},
+              {'S', 'H'},
+            // WORKAROUND: Joker/Faker need new frames created (Friendly Frames with Red/Hostile Fill)
+            // For now just use Hostile and record this as a known issue
+              {'J', 'H'},
+              {'K', 'H'},
+            // END WORKAROUND: Joker/Faker
+              {'P', 'U'},
+              {'G', 'U'},
+              {'W', 'U'},
+              {'L', 'N'} };
+
+        private Dictionary<char, char> SecondCharacterMapPlanning = new Dictionary<char, char>() 
+            { {'F', 'A'},
+              {'H', 'S'},
+              {'U', 'P'},
+              {'N', 'N'},
+              {'M', 'A'},
+              {'A', 'A'},
+              {'D', 'A'},
+              {'S', 'S'},
+            // WORKAROUND: Joker/Faker need new frames created (Friendly Frames with Red/Hostile Fill)
+            // For now just use Hostile and record this as a known issue
+              {'J', 'S'},
+              {'K', 'S'},
+            // END WORKAROUND: Joker/Faker
+              {'P', 'P'},
+              {'G', 'P'},
+              {'W', 'P'},
+              {'L', 'N'} };
+
         private Dictionary<string, int> Echelon2Ordinal = new Dictionary<string, int>() {{"A",0},
                                                                                         {"B",1},
                                                                                         {"C",11},
@@ -1184,7 +1381,7 @@ namespace AppendMilitaryFeatures
                                                                                         {"M",333333},
                                                                                         {"N",44}};
 
-        private Dictionary<string, string> Position11and12ToMarkerSymbolName = new Dictionary<string, string>()
+        private Dictionary<string, string> MobilityToMarkerSymbolName = new Dictionary<string, string>()
             {{"O","Wheeled (Limited Cross Country)"},
                 {"P","Wheeled (Cross Country)"},
                 {"Q","Tracked"},
@@ -1196,8 +1393,6 @@ namespace AppendMilitaryFeatures
                 {"W","Pack Animals"},
                 {"X","Barge"},
                 {"Y","Amphibious"}};
-
-        private Dictionary<string, List<string>> Position11ToMarkerSymbolNames = new Dictionary<string, List<string>>();
 
         private Dictionary<string, int> SIC2RuleID = new Dictionary<string, int>()
         {
