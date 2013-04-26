@@ -156,7 +156,7 @@ namespace AppendMilitaryFeatures
 
                 char s11 = symbolId[10]; 
                 // Make sure its not an installation ("H") or mobility one ("NL")
-                if ((s11 != 'H') || ((s11 == 'N') && (echelon == 'L')))
+                if ((s11 == 'H') || ((s11 == 'N') && (echelon == 'L')))
                     return String.Empty;
 
                 if (IsMatchingSic(symbolId, @"[SO][A-Z0-9\-]{10}[A-N][A-Z0-9\-]{3}"))

@@ -1,0 +1,1 @@
+msbuild ..\TestSymbolCreator.sln /property:Configuration=Release

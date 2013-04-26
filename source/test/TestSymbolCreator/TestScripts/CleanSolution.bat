@@ -1,0 +1,1 @@
+msbuild ..\TestSymbolCreator.sln /t:clean
