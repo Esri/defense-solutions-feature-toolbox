@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #------------------------------------------------------------------------------
-# TestAppendMilitaryFeatures.py
+# TestCalculateSidc.py
 # Description: Automatic Test of GP script/toolbox
 # Requirements: ArcGIS Desktop Standard
 # -----------------------------------------------------------------------------
@@ -26,35 +26,48 @@ import TestUtilities
 
 def RunTest():
     try:
-        arcpy.AddMessage("Starting Test: TestAppendMilitaryFeatures")
+        arcpy.AddMessage("Starting Test: TestCalculateSidc")
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
-        inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
-
-        outputPointsFC = os.path.join(TestUtilities.outputGDB, r"FriendlyOperations/FriendlyUnits")
+        inputPointsFC = os.path.join(TestUtilities.inputGDB, "FriendlyOperations\FriendlyUnits")
                                         
         toolbox = TestUtilities.toolbox
                
         # Set environment settings
         print "Running from: " + str(TestUtilities.currentPath)
         print "Geodatabase path: " + str(TestUtilities.geodatabasePath)
-        print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
         arcpy.env.overwriteOutput = True
-        arcpy.ImportToolbox(toolbox, "PDCAlias")
+        arcpy.ImportToolbox(toolbox, "MFTAlias")
+        
+        sidcField = "sic"
+        echeclonField = "echelon" 
+        affiliation = "Friendly"
                      
-# Copy Blank Workspace 
-                             
-        symbolIdField = "Symbol_ID"
-        
+        # Zero out the SIDC/SIC field first
+        arcpy.CalculateField_management(inputPointsFC, sidcField, '""')
+                      
         ########################################################
-        # Execute the Model under test:           
-        arcpy.AppendMilitaryFeatures_PDCAlias(inputPointsFC, outputPointsFC, symbolIdField)
+        # Execute the Model under test:   
+        arcpy.CalcSIDCField_MFTAlias(inputPointsFC, sidcField, echeclonField, affiliation)
         ########################################################
         
-        # Verify the results
+        # Verify the results 
+        # That there are no blank or "Default Unknown/SUGPU----------" SIDC values
+        outputSidcsLayer = "SidcNull_layer"             
         
+        arcpy.MakeFeatureLayer_management(inputPointsFC, outputSidcsLayer)
+        query = '(' + sidcField + ' is NULL)' + ' or (' + sidcField + ' = \'SUGPU----------\')'
+        
+        arcpy.SelectLayerByAttribute_management(outputSidcsLayer, "NEW_SELECTION", query)
+        
+        nullSidcCount = int(arcpy.GetCount_management(outputSidcsLayer).getOutput(0))
+        print "Number of Null SIDC Records is: " + str(nullSidcCount)
+        
+        if (nullSidcCount > 0) :
+            print "Invalid Null SIDC Field Feature Count: " +  str(nullSidcCount)
+            raise Exception("Test Failed")         
         
         print "Test Successful"        
                 

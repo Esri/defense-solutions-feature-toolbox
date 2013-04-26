@@ -35,13 +35,14 @@ class SymbolDictionary(object):
         self.nameToSIC = dict([ \
         ###########################################
         ## TODO - If you have rule names that do not match the standard Military Features convention
-        ## you must add them here, or otherwise set in this dictionary. Example shown:
+        ## you must add them here(in UpperCase), or otherwise set in this dictionary. Example shown:
         ###########################################
                 ("STRYKER BATTALION",            "SFGPUCII---F---"), \
                 ("STRYKER CAVALRY TROOP",        "SFGPUCRRL--E---"), \
                 ("FIELD ARTILLERY BATTALION",    "SFGPUCF----F---"), \
                 ("STRYKER HEADQUARTERS COMPANY", "SFGPUH-----E---"), \
-                ("BRIGADE SUPPORT BATTALION",    "SFGPU------F---")
+                ("BRIGADE SUPPORT BATTALION",    "SFGPU------F---"), \
+                ("INFANTRY PLATOON F", "SFGPUCI----D---")
                 ])
 
         if (os.path.isfile(self.dictionaryFile)) :

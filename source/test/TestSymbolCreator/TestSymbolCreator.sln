@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestSymbolCreator", "TestSymbolCreator.csproj", "{00CC3C82-7C0A-4BDB-89A8-FF578E142354}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppendMilitaryFeatures", "..\..\AppendMilitaryFeaturesCS\AppendMilitaryFeatures.csproj", "{13A2FF20-934B-4C15-87C2-373CA1B2FBF8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{00CC3C82-7C0A-4BDB-89A8-FF578E142354}.Debug|x86.ActiveCfg = Debug|x86
+		{00CC3C82-7C0A-4BDB-89A8-FF578E142354}.Debug|x86.Build.0 = Debug|x86
+		{00CC3C82-7C0A-4BDB-89A8-FF578E142354}.Release|x86.ActiveCfg = Release|x86
+		{00CC3C82-7C0A-4BDB-89A8-FF578E142354}.Release|x86.Build.0 = Release|x86
+		{13A2FF20-934B-4C15-87C2-373CA1B2FBF8}.Debug|x86.ActiveCfg = Debug|x86
+		{13A2FF20-934B-4C15-87C2-373CA1B2FBF8}.Debug|x86.Build.0 = Debug|x86
+		{13A2FF20-934B-4C15-87C2-373CA1B2FBF8}.Release|x86.ActiveCfg = Release|x86
+		{13A2FF20-934B-4C15-87C2-373CA1B2FBF8}.Release|x86.Build.0 = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

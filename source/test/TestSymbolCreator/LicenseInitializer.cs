@@ -14,7 +14,7 @@
 using System;
 using ESRI.ArcGIS;
 
-namespace AppendMilitaryFeatures
+namespace TestSymbolCreator
 {
     internal partial class LicenseInitializer
     {
@@ -31,7 +31,7 @@ namespace AppendMilitaryFeatures
             if (!RuntimeManager.Bind(ProductCode.Desktop))
             {
                 // Failed to bind, announce and force exit
-                Console.WriteLine("Invalid ArcGIS runtime binding. Application will shut down.");
+                System.Windows.Forms.MessageBox.Show("Invalid ArcGIS runtime binding. Application will shut down.");
                 System.Environment.Exit(0);
             }
         }
