@@ -1,0 +1,3 @@
+REM Deletes all the pngs files...
+
+del /Q *.png

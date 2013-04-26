@@ -91,11 +91,11 @@ namespace TestSymbolCreator
             this.cbSymbolId.Items.AddRange(new object[] {
             "SFGPUCI---AAUSG",
             "SFGAUCI---AAUSG",
-            "SHGAUCI---AAUSG",
+            "SHGAUCI---DAUSG",
+            "SGGPUCI---MO---",
             "SPGPUCI--------",
             "SUGPUCI--------",
             "SAGPUCI--------",
-            "SFGPUCI--------",
             "SNGPUCI--------",
             "SSGPUCI--------",
             "SGGPUCI--------",
@@ -104,7 +104,11 @@ namespace TestSymbolCreator
             "SDGPUCI--------",
             "SLGPUCI--------",
             "SJGPUCI--------",
-            "SKGPUCI--------"});
+            "SKGPUCI--------",
+            "SFGAEVAL-------",
+            "SFSAXR---------",
+            "SFUASN---------",
+            "SFFAGP---------"});
             this.cbSymbolId.Location = new System.Drawing.Point(64, 12);
             this.cbSymbolId.Name = "cbSymbolId";
             this.cbSymbolId.Size = new System.Drawing.Size(121, 21);
@@ -133,7 +137,7 @@ namespace TestSymbolCreator
             this.Controls.Add(this.pictureBoxExport);
             this.Controls.Add(this.button1);
             this.Name = "Form1";
-            this.Text = "Military Symbol Checker";
+            this.Text = "Military Style Symbol Checker";
             this.Load += new System.EventHandler(this.Form1_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBoxExport)).EndInit();
             this.ResumeLayout(false);

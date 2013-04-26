@@ -42,7 +42,7 @@ def RunTest():
         print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
         arcpy.env.overwriteOutput = True
-        arcpy.ImportToolbox(toolbox, "PDCAlias")
+        arcpy.ImportToolbox(toolbox, "MFTAlias")
                      
 # Copy Blank Workspace 
                              
@@ -50,7 +50,7 @@ def RunTest():
         
         ########################################################
         # Execute the Model under test:           
-        arcpy.AppendMilitaryFeatures_PDCAlias(inputPointsFC, outputPointsFC, symbolIdField)
+        arcpy.AppendMilitaryFeatures_MFTAlias(inputPointsFC, outputPointsFC, symbolIdField)
         ########################################################
         
         # Verify the results

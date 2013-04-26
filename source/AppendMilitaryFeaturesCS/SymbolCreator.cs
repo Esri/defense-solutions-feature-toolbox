@@ -1,4 +1,17 @@
-﻿using System;
+﻿/* Copyright 2013 Esri
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -109,7 +122,7 @@ namespace AppendMilitaryFeatures
             return buildName.ToString();
         }
 
-        private void addMultilayerLayerByName( IMultiLayerMarkerSymbol mlms, string name)
+        private void addMultilayerLayerByName(IMultiLayerMarkerSymbol mlms, string name)
         {
             if ((mlms == null) || string.IsNullOrEmpty(name))
             {
@@ -141,8 +154,10 @@ namespace AppendMilitaryFeatures
 
                 char echelon = symbolId[11];
 
-                // TODO, make sure its not an installation ("H") or mobility one ("NL")
-                char s11 = symbolId[10]; // Needed for Installation/Mobility Check
+                char s11 = symbolId[10]; 
+                // Make sure its not an installation ("H") or mobility one ("NL")
+                if ((s11 != 'H') || ((s11 == 'N') && (echelon == 'L')))
+                    return String.Empty;
 
                 if (IsMatchingSic(symbolId, @"[SO][A-Z0-9\-]{10}[A-N][A-Z0-9\-]{3}"))
                 {
@@ -266,32 +281,91 @@ namespace AppendMilitaryFeatures
 
         private string getDashedFrameName(string symbolId)
         {
-            if (!((IsMatchingSic(symbolId, "^.[AGMPS].{13}$") || IsMatchingSic(symbolId, "^.{3}[A].{11}$"))))
+            // 1st: [SIOE], 2nd: [AGMPS] or 4th: [A]
+            if (!((IsMatchingSic(symbolId, "^[SIOE][AGMPS].{13}$") || IsMatchingSic(symbolId, "^[SIOE].{2}[A].{11}$"))))
                 return string.Empty;
 
+            // If Regex passes & we are here, assume dashed frame needed, now just figure out which one
+            //
+            // Warning this logic is difficult, the processing is to take the SymbolId 
+            // and map it to one of these existing frame SymbolIds:
+            //
+            // Friendly                  Neutral
+            // SAPP, SAAP  --> SAPP      SNPA
+            // SAFPm SAGPU               SNGA
+            // SAGPE, SASP  --> SAGPE
+            // SAUP                      SNUA
+            //                      
+            // Hostile                   Unknown
+            // SSPP                      SPPP
+            // SSGP                      SPGP
+            // SSUP                      SPUP
+
+            char codingScheme = symbolId[0];
             char frame = symbolId[1];
+            char battleDim = symbolId[2];
+            char groundOrEquip = symbolId[4];
+
             char affiliation = SecondCharacterMapPlanning[frame];
-            char char5 = symbolId[4];
+
+            // CodingScheme/Affiliations available in the style files:
+            // SA - Friend, SS - Hostile, SP - Unknown, SN - Neutral
+
+            // Coding Schemes: S I O E
+            // Affiliations: A S P N
+            // Battle Dimensions: Z P A G(U) G(E) S U F
+
+            if (codingScheme == 'O') 
+                battleDim = 'G';
+            else if (codingScheme == 'E')
+            {
+                if (battleDim == 'I') // can only figure out these 
+                    battleDim = 'G';
+                else
+                    return string.Empty;
+            }
+
+            if (battleDim == 'F') 
+                battleDim = 'G';
+
+            if (battleDim == 'S')
+            {
+                battleDim = 'G';
+                groundOrEquip = 'E';
+            }
 
             StringBuilder dashedSIC = new StringBuilder();
-            dashedSIC.Append(symbolId[0]);
+            dashedSIC.Append('S');
             dashedSIC.Append(affiliation);
-            dashedSIC.Append(symbolId[2]);
+
+            if (battleDim == 'A')
+                dashedSIC.Append('P');
+            else
+                dashedSIC.Append(battleDim);
 
             if (affiliation == 'N')
                 dashedSIC.Append('A');
             else
                 dashedSIC.Append('P');
 
-            if ((affiliation == 'A') && ((char5 == 'E') || (char5 == 'U')))
-                dashedSIC.Append(char5);
-
-            string id = dashedSIC.ToString();
-            if (SIC2SymbolNameDictionary.ContainsKey(id))
+            if (affiliation == 'A')
             {
-                return SIC2SymbolNameDictionary[id];
+                if (battleDim == 'G')
+                {
+                    if ((groundOrEquip == 'E') || (battleDim == 'S') || (codingScheme == 'I'))
+                        dashedSIC.Append('E');
+                    else
+                        dashedSIC.Append('U'); // if not an 'E' assume 'U' (ground)
+                }
             }
 
+            string lookupId = dashedSIC.ToString();
+            if (SIC2SymbolNameDictionary.ContainsKey(lookupId))
+            {
+                return SIC2SymbolNameDictionary[lookupId];
+            }
+
+            LogError("Could not find frame for SIDC: " + symbolId + ", lookup=" + lookupId);
             return string.Empty;
         }
 
@@ -347,12 +421,12 @@ namespace AppendMilitaryFeatures
         {
             string modifierName = string.Empty;
 
-            // Position 1 if it is SIO
-            // Position 4 if it is D, C, X, or F
-            if (!IsMatchingSic(symbolId, @"^[SIO].{2}[DCXF].{11}$"))
-                return modifierName;
+            // 1st: [SIOE], 11: [CDFG] 
+            if (!((IsMatchingSic(symbolId, "^[SIO].{9}[H][B].{3}$") ||
+                   IsMatchingSic(symbolId, "^[SIO].{9}[CDFG].{4}$"))))
+                return string.Empty;
 
-            // TODO
+            modifierName = "Feint/Dummy";
 
             return modifierName;
         }
@@ -369,7 +443,12 @@ namespace AppendMilitaryFeatures
         {
             string modifierName = string.Empty;
 
-            // TODO
+            // Position 1 must be SIO
+            // Position 11 must be BDEG
+            if (!IsMatchingSic(symbolId, @"^[SIO][A-Z0-9\-]{9}[BDEG][A-Z0-9\-]{4}$"))
+                return modifierName;
+
+            modifierName = "Task Force";
 
             return modifierName;
         }
@@ -386,23 +465,38 @@ namespace AppendMilitaryFeatures
         {
             string modifierName = string.Empty;
 
-            // Position 1 if it is SIO
-            // Position 4 if it is D, C, X, or F
-            if (!IsMatchingSic(symbolId, @"^[SOE].{2}[DCXF].{11}$"))
+            // Position 1: SIOE
+            // Position 11, 12: [MN][LOPQRSTUVQXY]
+            if (!IsMatchingSic(symbolId, @"^[SIOE][A-Z0-9\-]{9}[MN][LOPQRSTUVWXY].{3}$"))
                 return modifierName;
 
-            //MobilityToMarkerSymbolName 
-            //{{"O","Wheeled (Limited Cross Country)"},
-            //    {"P","Wheeled (Cross Country)"},
-            //    {"Q","Tracked"},
-            //    {"R","Wheeled and Tracked"},
-            //    {"S","Towed"},
-            //    {"T","Railway"},
-            //    {"U","Over Snow"},
-            //    {"V","Sled"},
-            //    {"W","Pack Animals"},
-            //    {"X","Barge"},
-            //    {"Y","Amphibious"}};
+            //////////////////////////////////////////////
+            // Decoder Ring in case of problems
+            //////////////////////////////////////////////
+            //NL Towed Sonar (Short)
+            //NS Towed Sonar (Long)
+            //MO Wheeled (Limited Cross Country)
+            //MP Wheeled (Cross Country)
+            //MQ Tracked
+            //MR Wheeled and Tracked
+            //MS Towed
+            //MT Railway
+            //MU Over Snow
+            //MV Sled
+            //MW Pack Animals
+            //MX Barge
+            //MY Amphibious
+            //////////////////////////////////////////////
+
+            char s11 = symbolId[10];
+            char s12 = symbolId[11];
+            
+            if (((s11 == 'N') && ((s12 == 'L') || (s12 == 'S')) || 
+                ((s11 == 'M') && ((s12 >= 'O') && (s12 <= 'Y')))))
+            {
+                StringBuilder sb = new StringBuilder(); sb.Append(s11); sb.Append(s12);
+                modifierName = MobilityToMarkerSymbolName[sb.ToString()];
+            }
 
             return modifierName;
         }
@@ -421,10 +515,20 @@ namespace AppendMilitaryFeatures
 
             // Position 1 must be SOE
             // Position 11 must be H
-            if (!IsMatchingSic(symbolId, @"[SOE][A-Z0-9\-]{10}[H][A-Z0-9\-]{3}"))
+            if (!IsMatchingSic(symbolId, @"^[SOE][A-Z0-9\-]{9}[H][A-Z0-9\-]{4}$"))
                 return modifierName;
 
-            // TODO
+            char frame = symbolId[1];
+            char affiliation = replaceSecondCharacter(frame);
+
+            switch (affiliation)
+            {
+                case 'F': modifierName = "Installation Modifier F"; break;
+                case 'H': modifierName = "Installation Modifier H"; break;
+                case 'N': modifierName = "Installation Modifier N"; break;
+                case 'U': modifierName = "Installation Modifier U"; break;
+                default: break;
+            }
 
             return modifierName;
         }
@@ -1160,7 +1264,12 @@ namespace AppendMilitaryFeatures
                             string lastTag = tagListReversed.ElementAt(0);
                             string sidc = lastTag.ToUpper().Trim().Replace('*', '-');
 
-                            if (!string.IsNullOrEmpty(sidc)) // (sidc))
+                            if (string.IsNullOrEmpty(sidc))
+                            {
+                                // It has an empty SIC (Some of the entries have blank SICs)
+                                // LogError(String.Format("*** Failed to add a valid SIC, {0}, {1}, {2}, {3}, {4}", sidc.Length, sidc, IsValidSic(sidc) ? "valid" : "INVALID", SIC2SymbolNameDictionary.ContainsKey(sidc) ? "DUPLICATE" : "New", item.Name));
+                            }
+                            else
                             {
                                 if (!SIC2SymbolNameDictionary.ContainsKey(sidc))
                                 {
@@ -1184,10 +1293,6 @@ namespace AppendMilitaryFeatures
                                         ID2StyleGalleryItemDictionary.Add(itemName, item);
                                     SIC2SymbolNameDictionary.Add(sidc, itemName);
                                 }
-                            }
-                            else
-                            {
-                                LogError(String.Format("*** Failed to add a valid SIC, {0}, {1}, {2}, {3}, {4}", sidc.Length, sidc, IsValidSic(sidc) ? "valid" : "INVALID", SIC2SymbolNameDictionary.ContainsKey(sidc) ? "DUPLICATE" : "New", item.Name));
                             }
                         }
                     }
@@ -1382,17 +1487,19 @@ namespace AppendMilitaryFeatures
                                                                                         {"N",44}};
 
         private Dictionary<string, string> MobilityToMarkerSymbolName = new Dictionary<string, string>()
-            {{"O","Wheeled (Limited Cross Country)"},
-                {"P","Wheeled (Cross Country)"},
-                {"Q","Tracked"},
-                {"R","Wheeled and Tracked"},
-                {"S","Towed"},
-                {"T","Railway"},
-                {"U","Over Snow"},
-                {"V","Sled"},
-                {"W","Pack Animals"},
-                {"X","Barge"},
-                {"Y","Amphibious"}};
+            {   {"NL", "Towed Sonar (Short)"},
+                {"NS", "Towed Sonar (Long)"},
+                {"MO","Wheeled (Limited Cross Country)"},
+                {"MP","Wheeled (Cross Country)"},
+                {"MQ","Tracked"},
+                {"MR","Wheeled and Tracked"},
+                {"MS","Towed"},
+                {"MT","Railway"},
+                {"MU","Over Snow"},
+                {"MV","Sled"},
+                {"MW","Pack Animals"},
+                {"MX","Barge"},
+                {"MY","Amphibious"}   };
 
         private Dictionary<string, int> SIC2RuleID = new Dictionary<string, int>()
         {
