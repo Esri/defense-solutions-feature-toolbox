@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #------------------------------------------------------------------------------
-# TestCalculateSidc.py
+# TestAppendMilitaryFeatures.py
 # Description: Automatic Test of GP script/toolbox
 # Requirements: ArcGIS Desktop Standard
 # -----------------------------------------------------------------------------
@@ -26,31 +26,31 @@ import TestUtilities
 
 def RunTest():
     try:
-        arcpy.AddMessage("Starting Test: TestCalculateSidc")
+        arcpy.AddMessage("Starting Test: TestAppendMilitaryFeatures")
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
-        inputPointsFC = os.path.join(TestUtilities.inputGDB, "FriendlyOperations\FriendlyUnits")
+        inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
+
+        outputPointsFC = os.path.join(TestUtilities.outputGDB, r"FriendlyOperations/FriendlyUnits")
                                         
         toolbox = TestUtilities.toolbox
                
         # Set environment settings
         print "Running from: " + str(TestUtilities.currentPath)
         print "Geodatabase path: " + str(TestUtilities.geodatabasePath)
+        print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
         arcpy.env.overwriteOutput = True
-        arcpy.ImportToolbox(toolbox, "PDCAlias")
-        
-        sidcField = "sic"
-        echeclonField = "echelon" 
-        affiliation = "Friendly"
+        arcpy.ImportToolbox(toolbox, "MFTAlias")
                      
-        # Zero out the SIDC/SIC field first
-        arcpy.CalculateField_management(inputPointsFC, sidcField, '""')
-                      
+# Copy Blank Workspace 
+                             
+        symbolIdField = "Symbol_ID"
+        
         ########################################################
-        # Execute the Model under test:   
-        arcpy.CalcSIDCField_PDCAlias(inputPointsFC, sidcField, echeclonField, affiliation)
+        # Execute the Model under test:           
+        arcpy.AppendMilitaryFeatures_MFTAlias(inputPointsFC, outputPointsFC, symbolIdField)
         ########################################################
         
         # Verify the results

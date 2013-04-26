@@ -13,7 +13,7 @@
   <property name="dir.arcpy" value="C:\Python27\ArcGIS10.1"/>
   <property name="dir.arcgisdesktop" value="C:\Program Files (x86)\ArcGIS\Desktop10.1"/>
   <property name="dir.src" value="."/>
-  <property name="dir.datafetchdir" value="../../"/>
+  <property name="dir.datafetchdir" value="../../../"/>
 
   <property name="pythonpath" value="${dir.arcpy}\DLLs;${dir.arcpy}\lib;${dir.arcpy}\lib\plat-win;${dir.arcpy}\lib\lib-tk;${dir.arcpy};${dir.arcpy}\lib\site-packages;${dir.arcgisdesktop}\bin;${dir.arcgisdesktop}\arcpy"/>
 

@@ -20,9 +20,9 @@
 import os
 
 currentPath = os.path.dirname(__file__)
-dataPath = os.path.normpath(os.path.join(currentPath, r"../../data/"))
-geodatabasePath = os.path.normpath(os.path.join(currentPath, r"../../data/geodatabases/"))
-toolboxesPath = os.path.normpath(os.path.join(currentPath, r"../../toolboxes/"))                
+dataPath = os.path.normpath(os.path.join(currentPath, r"../../../data/"))
+geodatabasePath = os.path.normpath(os.path.join(currentPath, r"../../../data/geodatabases/"))
+toolboxesPath = os.path.normpath(os.path.join(currentPath, r"../../../toolboxes/"))                
 
 inputGDB  = os.path.join(geodatabasePath, "test_inputs.gdb")
 inputGDBNoSidcs  = os.path.join(geodatabasePath, "test_inputs_no_sidcs.gdb")

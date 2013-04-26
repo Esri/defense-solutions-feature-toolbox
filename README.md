@@ -39,6 +39,10 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * Verify “Build Succeeded”  
         * This will create a directory military-feature-toolbox/data with required data files
 * Open and build the Visual Studio Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
+    * To use MSBuild to build the solution
+        * Open a Visual Studio Command Prompt: Microsoft Visual Studio 2012 | Visual Studio Tools | Developer Command Prompt for VS2012
+        * cd military-feature-toolbox\source\AppendMilitaryFeaturesCS
+        * msbuild AppendMilitaryFeatures2010.sln /property:Configuration=Release
 * (Optional) Test the command line AppendMilitaryFeatures application
     * cd military-feature-toolbox\application
     * > AppendMilitaryFeatures.exe 
