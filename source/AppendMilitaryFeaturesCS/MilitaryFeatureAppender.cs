@@ -425,10 +425,18 @@ namespace AppendMilitaryFeatures
             HashSet<string> matchedRules = new HashSet<string>();
 
             if ((inputFeatureClass == null) || (mapper == null) || (!mapper.Initialized))
-                return matchedRules;
+                return matchedRules; // = nothing
 
             IFeatureCursor featureCursor = inputFeatureClass.Search(null, true);
+            if (featureCursor == null)
+                return matchedRules; // = nothing
+
             IFeature currentFeature = featureCursor.NextFeature();
+            if (currentFeature == null)
+            {
+                Console.WriteLine("No features in input Feature Class - ABORTING");
+                return matchedRules; // = nothing
+            }
 
             string geometryString = SicToFeatureClassMapper.POINT_STRING;
 

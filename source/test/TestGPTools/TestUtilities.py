@@ -22,13 +22,14 @@ import os
 currentPath = os.path.dirname(__file__)
 dataPath = os.path.normpath(os.path.join(currentPath, r"../../../data/"))
 geodatabasePath = os.path.normpath(os.path.join(currentPath, r"../../../data/geodatabases/"))
-toolboxesPath = os.path.normpath(os.path.join(currentPath, r"../../../toolboxes/"))                
+toolboxesPath = os.path.normpath(os.path.join(currentPath, r"../../../toolboxes/"))
 
+blankMilFeaturesGDB = os.path.join(geodatabasePath, "MilitaryOverlay10.1.1-Blank.gdb")                
 inputGDB  = os.path.join(geodatabasePath, "test_inputs.gdb")
-inputGDBNoSidcs  = os.path.join(geodatabasePath, "test_inputs_no_sidcs.gdb")
 inputGDBNonMilitaryFeatures  = os.path.join(geodatabasePath, "test_inputs_non_military_features.gdb")
 outputGDB = os.path.join(geodatabasePath, "test_outputs.gdb")
+outputGDBTemp = os.path.join(geodatabasePath, "test_outputs_temp.gdb")
 outputMessagePath = os.path.join(dataPath, "messagefiles")
 
-toolbox = os.path.join(toolboxesPath, "MilitaryFeatureTools.tbx")
+toolbox = os.path.join(toolboxesPath, "Military Feature Tools.tbx")
   

@@ -39,7 +39,7 @@ def RunTest():
         print "Geodatabase path: " + str(TestUtilities.geodatabasePath)
                 
         arcpy.env.overwriteOutput = True
-        arcpy.ImportToolbox(toolbox, "MFTAlias")
+        arcpy.ImportToolbox(toolbox, "MFT")
         
         sidcField = "sic"
         echeclonField = "echelon" 
@@ -50,7 +50,7 @@ def RunTest():
                       
         ########################################################
         # Execute the Model under test:   
-        arcpy.CalcSIDCField_MFTAlias(inputPointsFC, sidcField, echeclonField, affiliation)
+        arcpy.CalcSIDCField_MFT(inputPointsFC, sidcField, echeclonField, affiliation)
         ########################################################
         
         # Verify the results 
