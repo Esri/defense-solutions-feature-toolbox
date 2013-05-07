@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #----------------------------------------------------------------------------------
-# ==================================================
 # AppendMilitaryFeatures.py
-# --------------------------------------------------
-# Version: ArcGIS Desktop 10.1
-# --------------------------------------------------
-# This PY file handles the GP input and validation for
-# the Append Military Features command line tool 
-# ==================================================
+# Description: This PY file handles the GP input, validation, and output for
+#              the Append Military Features command line tool 
+# Requirements: ArcGIS Desktop Advanced (Advanced needed to change Representation Rules)
+#----------------------------------------------------------------------------------
 
 # IMPORTS ==========================================
 import os, sys, traceback
@@ -82,7 +79,7 @@ try:
         arcpy.AddError(errorDictionary[retCode])
     
     # Set output
-    arcpy.SetParameter(1,targetGeodatabase)
+    arcpy.SetParameter(3,targetGeodatabase)
 
 except arcpy.ExecuteError: 
     # Get the tool error messages 

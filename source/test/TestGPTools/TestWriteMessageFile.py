@@ -42,11 +42,11 @@ def RunTest():
         print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
         arcpy.env.overwriteOutput = True
-        arcpy.ImportToolbox(toolbox, "PDCAlias")
+        arcpy.ImportToolbox(toolbox, "MFT")
                      
         ########################################################
         # Execute the Model under test:   
-        arcpy.WriteRuntimeMessageFileFromMilFeatures_PDCAlias(inputPointsFC, outputMessageFile)
+        arcpy.WriteRuntimeMessageFileFromMilFeatures_MFT(inputPointsFC, outputMessageFile)
         ########################################################
         
         # Verify the results
