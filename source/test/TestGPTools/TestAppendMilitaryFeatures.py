@@ -24,15 +24,24 @@ import traceback
 
 import TestUtilities
 
+def deleteTemp() :
+    try :   
+        arcpy.Delete_management(TestUtilities.outputGDBTemp)
+    except:    
+        print "Delete: " + TestUtilities.outputGDBTemp + " failed (may not exist yet)"
+        
 def RunTest():
     try:
         arcpy.AddMessage("Starting Test: TestAppendMilitaryFeatures")
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
-        inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
+        # Delete Temp GDB (in case it already exists, for instance if prior run crashed)
+        deleteTemp()
+        
+        inputPointsFC = os.path.join(TestUtilities.inputGDBNonMilitaryFeatures, r"FriendlyForces")
 
-        outputPointsFC = os.path.join(TestUtilities.outputGDB, r"FriendlyOperations/FriendlyUnits")
+        outputPointsFC = os.path.join(TestUtilities.outputGDBTemp, r"FriendlyOperations/FriendlyUnits")
                                         
         toolbox = TestUtilities.toolbox
                
@@ -42,19 +51,39 @@ def RunTest():
         print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
         arcpy.env.overwriteOutput = True
-        arcpy.ImportToolbox(toolbox, "MFTAlias")
+        arcpy.ImportToolbox(toolbox, "MFT")
                      
-# Copy Blank Workspace 
-                             
+        # Copy Blank Workspace to Temp GDB
+        arcpy.Copy_management(TestUtilities.blankMilFeaturesGDB, TestUtilities.outputGDBTemp)
+                        
+        outputWorkspace = TestUtilities.outputGDBTemp
         symbolIdField = "Symbol_ID"
         
         ########################################################
         # Execute the Model under test:           
-        arcpy.AppendMilitaryFeatures_MFTAlias(inputPointsFC, outputPointsFC, symbolIdField)
+        toolOutput = arcpy.AppendMilitaryFeatures_MFT(inputPointsFC, outputWorkspace, symbolIdField)
         ########################################################
-        
+
         # Verify the results
         
+        # 1: Check the expected return value
+        returnedValue = toolOutput.getOutput(0)        
+        if (returnedValue <> TestUtilities.outputGDBTemp) :
+            print "Unexpected Return Value: " + str(returnedValue)
+            print "Expected: " + str(TestUtilities.outputGDBTemp)
+            raise Exception("Test Failed")
+        
+        # 2: Check that the output feature class contains some values
+        outputFeatureCount = int(arcpy.GetCount_management(outputPointsFC).getOutput(0))
+        
+        print "Output Feature Count: " + str(outputFeatureCount)
+                
+        if (outputFeatureCount <= 0) :
+            print "Invalid Output Feature Count: exiting..."
+            raise Exception("Test Failed")
+                   
+        # Delete Temp GDB
+        deleteTemp()      
         
         print "Test Successful"        
                 
