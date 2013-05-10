@@ -38,6 +38,11 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * > ant
         * Verify “Build Succeeded”  
         * This will create a directory military-feature-toolbox/data with required data files
+* Update the local ArcGIS Military Style Files to the latest version
+    * Navigate to the folder military-feature-toolbox\data\stylefiles
+    * Update/copy all of the .style files from this folder into your ArcGIS Desktop Style folder
+    * For example, copy the style files from above location into this Desktop Folder:
+    	* {ArcGIS Install Location}\ArcGIS\Desktop10.1\Styles
 * Open and build the Visual Studio Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
     * To use MSBuild to build the solution
         * Open a Visual Studio Command Prompt: Microsoft Visual Studio 2012 | Visual Studio Tools | Developer Command Prompt for VS2012
@@ -53,9 +58,9 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * Symbol_ID
 * Start ArcMap or ArcCatalog and run the Append Military Features Geoprocessing tool at military-feature-toolbox\toolboxes
     *  IMPORTANT: the output military feature geodatabase must not be open in any other application or the tool will fail with "can not obtain Schema Lock" error
-* To run unit tests
+* To run all GP Tool unit tests
     * Open Command Prompt>
-    * > cd military-feature-toolbox\source\test
+    * > cd military-feature-toolbox\source\test\TestGPTools
     * > ant
     * Verify "Build Succeeded"
 
