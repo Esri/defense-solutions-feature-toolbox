@@ -31,6 +31,7 @@ import uuid
 ### 1 - outputXMLFile
 ### 2 - orderBy see: http://resources.arcgis.com/en/help/main/10.1/index.html#//018v00000050000000)
 ###     orderBy now called sort_fields (ex: sort_fields="STATE_NAME A; POP2000 D")
+### 3 - MessageFormat: ARCGIS_RUNTIME, ARCGIS_GEOMESSAGE
 
 appendFile = False
 DEBUG_GEOMETRY_CONVERSION = False # True # switch to bypass geometry conversion to keep feature at original placement
@@ -38,6 +39,7 @@ DEBUG_GEOMETRY_CONVERSION = False # True # switch to bypass geometry conversion 
 def writeMessageFile() :
 
     try :
+        arcpy.AddMessage("Starting: Write/Append Message File")
 
         # Get input feature class
         inputFC = arcpy.GetParameter(0)
@@ -49,9 +51,28 @@ def writeMessageFile() :
             return
 
         shapeType = desc.shapeType
-
+        
         # Get output filename
         outputFile = arcpy.GetParameterAsText(1)
+        
+        # Sort Order 
+        orderBy = arcpy.GetParameterAsText(2)   
+        
+        # Output Message Format
+        messageFormat = arcpy.GetParameterAsText(3)     
+        
+        if not (messageFormat is "") and not (messageFormat is None) and \
+           (messageFormat == MilitaryUtilities.GeoMessageFormat) :
+            MilitaryUtilities.CurrentMessageFormat = \
+                MilitaryUtilities.GeoMessageFormat         
+
+        arcpy.AddMessage("Running with Parameters:")
+        arcpy.AddMessage("0 - Input FC: " + str(inputFC))
+        arcpy.AddMessage("1 - outputXMLFile: " + str(outputFile))
+        arcpy.AddMessage("2 - orderBy: " + orderBy)
+        arcpy.AddMessage("3 - MessageFormat: " + MilitaryUtilities.CurrentMessageFormat)
+        
+        # Check Output Filename & see handle case if we are appending
         if (outputFile is "") or (outputFile is None) :
             # For a standalone test (debug) if no output filename provided
             if DEBUG_GEOMETRY_CONVERSION : 
@@ -61,35 +82,41 @@ def writeMessageFile() :
             outputFile = os.path.join(os.path.dirname(__file__), defaultOutputName)  
             messageFile=open(outputFile, "w")
             arcpy.AddWarning("No Output set, using default: " + str(outputFile))
-        else:
-            # appendFile = arcpy.GetParameterAsText(3)
+        else:            
             arcpy.AddMessage("Append File set to " + str(appendFile))
-            if (not appendFile) or (not os.path.isfile(outputFile)) :
+            if (not appendFile) :
                 messageFile = open(outputFile, "w")
-            #if (appendFile is "") or (appendFile is None) or \
-            #    (str(appendFile)=="false") or (not os.path.isfile(outputFile)) :
-            #    messageFile = open(outputFile, "w")
-            #    appendFile = False
+            elif (not os.path.isfile(outputFile)) :
+                arcpy.AddWarning("Can't Append: Output File does not exist, creating new file")
+                messageFile = open(outputFile, "w")                
             else :
-                arcpy.AddMessage("Appending File...")
+                arcpy.AddMessage("Appending Existing File...")
+                
                 # Appending the file is a bit more complicated because we have to remove the 
                 # "</messages>" from the end of the original file therefore it can't just be 
                 # opened as an append "a+"-we have to create a temp file, read the original file in,
                 # except for the line "</messages>", and then write back out
                 
                 fileToAppend = open(outputFile, "r")
-                # Note: didn't work in ArcCatalog unless I opened temp file this way
+                # Workaround/Note: didn't work in ArcCatalog unless I opened temp file this way
                 temporaryFile = tempfile.NamedTemporaryFile(mode="w", delete=False)
 
-                # Copy the file line by line, but don't include last </messages>
+                # Copy the file line by line, but don't include last end tag ex. </messages>
+                finalTag = "</%s>" % MilitaryUtilities.getMessageRootTag()
+                finalTagFound = False
                 while True:
                     line = fileToAppend.readline()
                     if line : 
-                        if not "</messages>" in line :
+                        if not finalTag in line :  # ex. "</messages>"
                             temporaryFile.write(line)
+                        else :
+                            finalTagFound = True
                     else :
                         break
 
+                if (not finalTagFound) : 
+                    arcpy.AddError("XML Append File will be corrupt: Could not find Tag: " + finalTag)
+                    
                 # now write those lines back
                 fileToAppend.close()
                 temporaryFile.close()
@@ -107,9 +134,6 @@ def writeMessageFile() :
         if (messageFile is None) : 
             arcpy.AddError("Output file can't be created, exiting")
             return
-
-        # Sort Order 
-        orderBy = arcpy.GetParameterAsText(2)    
 
         ##################Setup for export############################
         # Densify if this is a polygon FC
@@ -146,19 +170,26 @@ def writeMessageFile() :
 
         ################Begin Export ##########################
 
-        # Open a searchcursor
-        rows = arcpy.SearchCursor(inputFC, "", "", "", orderBy)
+        # Open a search cursor (if possible)
+        try :            
+            rows = arcpy.SearchCursor(inputFC, "", "", "", orderBy)            
+        except :            
+            arcpy.AddError("Could not open Feature Class " + str(inputFC))
+            if (not ((orderBy == "") and not (orderBy is None))) :
+                arcpy.AddError("OrderBy Search Option: " + orderBy)
+            raise Exception("Bad Feature Class Input")             
 
         # Dictionary to map unique designation to ID
         unitDesignationToId = dict()
         
         featureFields = desc.fields
 
-        ################Write XML file#########################
+        ###################### Write XML file #########################
 
         if not appendFile :
-            messageFile.write("<messages>\n")
-
+            # Ex: Next line writes: messageFile.write("<messages>\n") 
+            messageFile.write("<%s>\n" % MilitaryUtilities.getMessageRootTag())            
+            
         rowCount = 0
 
         # Iterate through the rows in the cursor
@@ -177,10 +208,10 @@ def writeMessageFile() :
 
             # work with "sidc" or "sic"
             try : 
-                SymbolIdCodeVal = row.getValue("sic")
+                SymbolIdCodeVal = row.getValue(MilitaryUtilities.SidcFieldChoice1) # "sic"
             except:
                 try : 
-                    SymbolIdCodeVal = row.getValue("sidc")
+                    SymbolIdCodeVal = row.getValue(MilitaryUtilities.SidcFieldChoice2) # "sidc"
                 except:     
                     SymbolIdCodeVal = None                
                                   
@@ -213,12 +244,23 @@ def writeMessageFile() :
                     controlPointsString = transformedPoints
 
             # Write Output Message
-            messageFile.write("\t<message v=\"1.0\">\n")
+            # Ex: Next Line writes: messageFile.write("\t<message v=\"1.0\">\n")            
+            messageFile.write("\t<%s v=\"%s\">\n" % (MilitaryUtilities.getMessageTag(), \
+                                                     MilitaryUtilities.getMessageVersion()))
+            
             messageFile.write("\t\t<sic>%s</sic>\n" % SymbolIdCodeVal) 
 
-            ##TODO: see if other types are valid in RuntimeSDK (besides just "position_report"/"update")
-            messageFile.write("\t\t<_type>position_report</_type>\n")                        
-            messageFile.write("\t\t<_action>update</_action>\n")
+            # Try to get a message type if the field exists
+            try :   
+                messageTypeVal = row.getValue(MilitaryUtilities.MessageTypeField)           
+                f.write("\t\t<_type>%s</_type>\n" % row.getValue(messagetypefield))
+            except :             
+                # if not default to position_report
+                messageFile.write("\t\t<_type>%s</_type>\n" % MilitaryUtilities.DefaultMessageType)       
+                                 
+            ##TODO: see if other actions are valid besides just "update"
+            messageFile.write("\t\t<_action>%s</_action>\n" % MilitaryUtilities.DefaultMessageAction) # = update
+            
             messageFile.write("\t\t<_id>%s</_id>\n" % uniqueId) 
             messageFile.write("\t\t<_control_points>%s</_control_points>\n" % controlPointsString)  
             if not ((conversionNotes is None) or (conversionNotes is "")) : 
@@ -238,21 +280,31 @@ def writeMessageFile() :
                 messageFile.write("\t\t<"+key+">" + attrValAsString + "</" + key + ">\n")
 
             ###################Common Fields/Attributes#####################
+            
+            # Write out remaining table fields as Tag attributes
             for field in fieldNameList:
                 try : 
-                    rowVal = row.getValue(field)
+                    # But don't repeat existing tags we've created
+                    if field in DictionaryConstants.MESSAGES_TAG_LIST :
+                        rowVal = None 
+                    else :
+                        rowVal = row.getValue(field)
                 except :
                     print "Could not get row val for field" + field
                     rowVal = None
+                    
                 if rowVal is not None:
                     fieldValAsString = str(row.getValue(field))
                     messageFile.write("\t\t<"+field+">" + fieldValAsString + "</" + field + ">\n")
             ###################Common Fields/Attributes#####################
 
-            messageFile.write("\t</message>\n")
+            # Ex: messageFile.write("\t</message>\n")
+            messageFile.write("\t</%s>\n" % MilitaryUtilities.getMessageTag())
 
-        messageFile.write("</messages>")
-
+        # Ex: messageFile.write("</messages>")
+        messageFile.write("</%s>\n" % MilitaryUtilities.getMessageRootTag())       
+        arcpy.AddMessage("Write/Append Message File Complete")
+        
     except: 
         print "Exception: " 
         tb = traceback.format_exc()

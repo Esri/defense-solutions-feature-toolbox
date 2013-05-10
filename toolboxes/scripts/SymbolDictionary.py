@@ -231,12 +231,12 @@ class SymbolDictionary(object):
                 if (self.Name2RuleID.has_key(correctedSymbolName)) :
                     ruleId = self.Name2RuleID[correctedSymbolName]
                 else :
-                    arcpy.AddError("Could not find RuleID for Symbol Name: " + correctedSymbolName)
+                    arcpy.AddWarning("Could not find RuleID for Symbol Name: " + correctedSymbolName)
                     ruleId = -1
 
         except :
-            print "Exception in symbolIdToRuleId()"
             ruleId = -1
+            arcpy.AddWarning("Unexpected Exception in symbolIdToRuleId() - using RuleId: " + str(ruleId))
 
         return ruleId, symbolName
 

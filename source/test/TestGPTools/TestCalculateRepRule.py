@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #------------------------------------------------------------------------------
-# TestWriteMilitaryFeatureFromMessage.py
+# TestCalculateRepRule.py
 # Description: Automatic Test of GP script/toolbox
 # Requirements: ArcGIS Desktop Standard
 # -----------------------------------------------------------------------------
@@ -26,31 +26,62 @@ import TestUtilities
 
 def RunTest():
     try:
-        arcpy.AddMessage("Starting Test: TestWriteMilitaryFeatureFromMessage")
+        arcpy.AddMessage("Starting Test: TestCalculateRepRule")
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
-        inputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"FriendlyUnitsMessages.xml")       
-
-        outputPointsFC = os.path.join(TestUtilities.outputGDB, r"FriendlyOperations/FriendlyUnits")
+        inputPointsToCopy = os.path.join(TestUtilities.inputGDB, "FriendlyOperations\FriendlyUnits")
+        
+        inputRepRuleFC = os.path.join(TestUtilities.outputGDB, "FriendlyUnitsTemp")    
                                         
         toolbox = TestUtilities.toolbox
                
         # Set environment settings
         print "Running from: " + str(TestUtilities.currentPath)
         print "Geodatabase path: " + str(TestUtilities.geodatabasePath)
-        print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
         arcpy.env.overwriteOutput = True
+        
+        # Make a copy of the input FC into the output GDB
+        arcpy.CopyFeatures_management(inputPointsToCopy, inputRepRuleFC)        
+        
         arcpy.ImportToolbox(toolbox, "MFT")
+        
+        repRuleField = "symbolrule"
                      
+        # The zero out (or '-1'-out) the SymbolRule field (so we can see if it gets set later)
+        arcpy.CalculateField_management(inputRepRuleFC, repRuleField, '-1')
+                 
+        sidcField = "sic"
+             
         ########################################################
         # Execute the Model under test:   
-        arcpy.WriteMilFeatureFromMessageFile_MFT(inputMessageFile, outputPointsFC)
+        toolOutput = arcpy.CalculateRepresentationRuleField_MFT(inputRepRuleFC, sidcField)
         ########################################################
         
         # Verify the results
+         
+        # 1: Check the expected return value
+        returnedValue = toolOutput.getOutput(0)        
+        if (returnedValue <> inputRepRuleFC) :
+            print "Unexpected Return Value: " + str(returnedValue)
+            print "Expected: " + str(inputRepRuleFC)
+            raise Exception("Test Failed")
+                
+        # 2: That there are no blank or "Default Unknown/SUGPU----------" SIDC values
+        outputSidcsLayer = "SidcNull_layer"             
         
+        arcpy.MakeFeatureLayer_management(inputRepRuleFC, outputSidcsLayer)
+        query = '(' + repRuleField + ' is NULL)' + ' or (' + repRuleField + '=-1)'
+        
+        arcpy.SelectLayerByAttribute_management(outputSidcsLayer, "NEW_SELECTION", query)
+        
+        badRecordCount = int(arcpy.GetCount_management(outputSidcsLayer).getOutput(0))
+        print "Number of Bad Records (SymbolRule=-1) is: " + str(badRecordCount)
+        
+        if (badRecordCount > 0) :
+            print "Bad Record Feature Count: " +  str(badRecordCount)
+            raise Exception("Test Failed")         
         
         print "Test Successful"        
                 

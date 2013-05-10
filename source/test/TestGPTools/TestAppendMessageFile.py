@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #------------------------------------------------------------------------------
-# TestWriteMessageFile.py
+# TestAppendMessageFile.py
 # Description: Automatic Test of GP script/toolbox
 # Requirements: ArcGIS Desktop Standard
 # -----------------------------------------------------------------------------
@@ -21,20 +21,25 @@ import arcpy
 import os
 import sys
 import traceback
+import shutil
 
 import TestUtilities
 
 def RunTest():
     try:
-        arcpy.AddMessage("Starting Test: TestWriteMessageFile")
+        arcpy.AddMessage("Starting Test: TestAppendMessageFile")
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
         inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
 
-        outputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Test-WriteMessageFileFromMilitaryFeatures.xml")       
+        copyMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Mil2525CMessages-SampleOutput.xml")                   
 
-        outputMessageFileGeoMsg =  os.path.join(TestUtilities.outputMessagePath, r"Test-WriteMessageFileFromMilitaryFeatures-GeoMsg.xml")       
+        outputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Test-AppendMessageFileFromMilitaryFeatures.xml")
+        
+        shutil.copyfile(copyMessageFile, outputMessageFile)  
+        
+        startOutputFileSize= os.path.getsize(outputMessageFile)
                                         
         toolbox = TestUtilities.toolbox
                
@@ -48,31 +53,26 @@ def RunTest():
         
         ########################################################
         # Execute the Model under test:   
-        # Test 1: (Runtime Message Output)                    
-        arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile)
+        # Test 1:                     
+        toolOutput = arcpy.AppendMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile)
         ########################################################
-        
-        ########################################################
-        # Execute the Model under test:   
-        # Test 2: (Geo Message Output)                    
-        messageFormat = "ARCGIS_GEOMESSAGE"
-        orderBy = "#"
-                     
-        toolOutput = arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFileGeoMsg, orderBy, messageFormat)
-        ########################################################
-                
+                        
         # Verify the results
         
         # 1: Check the expected return value
         returnedValue = toolOutput.getOutput(0)        
-        if (returnedValue <> outputMessageFileGeoMsg) :
+        if (returnedValue <> outputMessageFile) :
             print "Unexpected Return Value: " + str(returnedValue)
-            print "Expected: " + str(outputMessageFileGeoMsg)
+            print "Expected: " + str(outputMessageFile)
             raise Exception("Test Failed")
         
-        #2: Check Output File Exists        
-        if (not (arcpy.Exists(outputMessageFile) and arcpy.Exists(outputMessageFileGeoMsg))) :
-            print "Expected output file does not exist" 
+        #2: Check that Output File is larger that the previous version 
+        #   ie. that it did get appended to
+        finishOutputFileSize = os.path.getsize(outputMessageFile)
+        print "File Before Append Size: " + str(startOutputFileSize) + ", After Append: " + str(finishOutputFileSize)
+        
+        if (finishOutputFileSize <= startOutputFileSize) :
+            print "Expected output file did not increase (was not appended to)" 
             raise Exception("Test Failed")
               
         print "Test Successful"        

@@ -132,9 +132,11 @@ namespace AppendMilitaryFeatures
         /// Military Feature destinationGeodatabase/featurelayer
         /// </summary>
         /// <returns>Success: True/False</returns>
-        public bool CalculateRepRulesFromSidc(string outputMilitaryFeatureClassString)
+        public bool CalculateRepRulesFromSidc(string outputMilitaryFeatureClassString, string sidcFieldName)
         {
             bool success = false;
+
+            MilitaryFeatureClassHelper.SIDC_FIELD_NAME2 = sidcFieldName;
 
             symbolCreator = new SymbolCreator();
 
@@ -253,6 +255,8 @@ namespace AppendMilitaryFeatures
                 if (repRulesWereAdded)
                     repClass.RepresentationRules = repClass.RepresentationRules;
             }
+
+            success = true;
 
             return success;
         }

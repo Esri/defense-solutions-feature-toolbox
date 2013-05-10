@@ -29,6 +29,7 @@ import traceback
 ### Params:
 ### 0 - inputXMLFileName
 ### 1 - outputFeatureClass
+### 2 - MessageFormat: ARCGIS_RUNTIME, ARCGIS_GEOMESSAGE
 
 def writeFeaturesFromMessageFile() :
 
@@ -38,11 +39,14 @@ def writeFeaturesFromMessageFile() :
         inputFileName = os.path.join(MilitaryUtilities.dataPath, r"/messages/Mil2525CMessages.xml")
                 
     if not os.path.isfile(inputFileName) :
-        arcpy.AddError("Bad Input")
+        arcpy.AddError("Bad Input File: " + inputFileName)
         return
 
     inputFile=open(inputFileName, "r")
-
+    if (inputFile is None) : 
+        arcpy.AddError("Input file can't be opened, exiting")
+        return
+        
     # Get the output feature class
     outputFC = arcpy.GetParameter(1)
     if (outputFC is "" or outputFC is None):
@@ -50,10 +54,25 @@ def writeFeaturesFromMessageFile() :
         
     desc = arcpy.Describe(outputFC)
     if desc == None :
-        print "Bad Output Dataset" + outputFC 
+        arcpy.AddError("Can't open Output Dataset: " + str(outputFC)) 
         return
 
     shapeType = desc.shapeType;
+
+    # Input Message Format
+    messageFormat = arcpy.GetParameterAsText(2)     
+    
+    if not (messageFormat is "") and not (messageFormat is None) and \
+       (messageFormat == MilitaryUtilities.GeoMessageFormat) :
+        MilitaryUtilities.CurrentMessageFormat = \
+            MilitaryUtilities.GeoMessageFormat     
+        MessageIterator.MessageIterator.MessageTagName = \
+            MilitaryUtilities.getMessageTag()    
+
+    arcpy.AddMessage("Running with Parameters:")
+    arcpy.AddMessage("0 - input XML File: " + str(inputFileName))
+    arcpy.AddMessage("1 - output FC: " + str(outputFC))
+    arcpy.AddMessage("2 - MessageFormat: " + MilitaryUtilities.CurrentMessageFormat)
 
     print "Exporting message objects from: " + str(inputFileName)
     print "To Feature Class: " + str(outputFC)
@@ -99,7 +118,7 @@ def writeFeaturesFromMessageFile() :
                 arcpy.AddMessage(skipMsg)
                 continue
 
-            # Used those SIC that map to 2 lines (ex. Task Screen/Guard/Cover)
+            # Used for those SICs that map to 2 lines (ex. Task Screen/Guard/Cover)
             repeatForPairFeatures = True
             repeatCount = 0
 
@@ -194,11 +213,14 @@ def writeFeaturesFromMessageFile() :
                         print "(", x, ",", y, ")"                                     
                 
             messageCount += 1
-
+            
+        if messageCount == 0 :
+            arcpy.AddWarning("No Messages Found in Input")
+           
     except :
-        print "Exception: " 
         tb = traceback.format_exc()
-        print tb
+        arcpy.AddError("Exception:")
+        arcpy.AddError(tb)        
 
     finally :
         # Delete cursor and row objects to remove locks on the data 

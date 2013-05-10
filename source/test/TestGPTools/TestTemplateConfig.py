@@ -35,7 +35,8 @@ try:
     print "Running from: " + str(TestUtilities.currentPath)
            
     paths2Check = []
-    paths2Check.extend([TestUtilities.geodatabasePath, TestUtilities.toolboxesPath])
+    paths2Check.extend([TestUtilities.outputMessagePath, TestUtilities.geodatabasePath, \
+                        TestUtilities.toolboxesPath])
     
     for path2check in paths2Check :
         if os.path.exists(path2check) :

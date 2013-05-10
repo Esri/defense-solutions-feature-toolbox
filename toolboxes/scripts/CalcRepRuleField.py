@@ -29,6 +29,7 @@ import arcpy
 
 # SCRIPT ARGUMENTS =================================
 inputMilitaryFeature = arcpy.GetParameterAsText(0)
+sidcField = arcpy.GetParameterAsText(1)
 
 # CONSTANTS ========================================
 
@@ -39,7 +40,7 @@ debug = True # switch off if detailed info not needed
 
 try:
     # set command line arguments - Note: need quotes("") around command line arguments (to handle spaces)
-    arguments = "\"" + str(inputMilitaryFeature) + "\"" 
+    arguments = "\"" + str(inputMilitaryFeature) + "\"" + " \"" + sidcField + "\"" 
     
     # set command string
     # AppendMilitaryFeatures.exe <inputFeatureClass> <outputGDB> [sicField]
@@ -81,7 +82,7 @@ try:
         arcpy.AddError(errorDictionary[retCode])
     
     # Set output
-    arcpy.SetParameter(1, inputMilitaryFeature)
+    arcpy.SetParameter(2, inputMilitaryFeature)
 
 except arcpy.ExecuteError: 
     # Get the tool error messages 

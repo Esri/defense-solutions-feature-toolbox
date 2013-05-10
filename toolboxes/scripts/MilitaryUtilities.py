@@ -25,14 +25,56 @@ import SymbolDictionary
 import GeometryConverter
 import DictionaryConstants
 
-# IMPORTANT: assumes Mil2525C.dat is at ../../data/dictionary
+# All Paths used/shared by the scripts are here:
 currentPath = os.path.dirname(__file__)
 dataPath = os.path.normpath(os.path.join(currentPath, r"../../data/"))
+# IMPORTANT: assumes Mil2525C.dat is at ../../data/dictionary
 dictionaryPath = os.path.normpath(os.path.join(dataPath, r"dictionary/"))
 geoDatabasePath = os.path.normpath(os.path.join(dataPath, r"geodatabases/"))
 symbolDictionaryPath = os.path.join(dictionaryPath,  "Mil2525C.dat" )
+
+# Some common helper objects
+## TODO: may want to switch to lazy initialization since they might not always be needed  
+## For now their _init_ methods are the first thing run so any crash will show up there 
 symbolDictionary = SymbolDictionary.SymbolDictionary(symbolDictionaryPath)
 geoConverter = GeometryConverter.GeometryConverter(symbolDictionary)
+
+# Some Military Feature Fields  
+MessageTypeField = "messagetype"
+SidcFieldChoice1 = "sic"
+SidcFieldChoice2 = "sidc"
+
+# Some Xml Message Tags  
+DefaultMessageType = "position_report"
+DefaultMessageAction = "update"
+
+##########################################################
+# Handles different Xml Formats of Runtime and GeoMessage
+GeoMessageFormat="ARCGIS_GEOMESSAGE"
+RuntimeMessageFormat="ARCGIS_RUNTIME"
+RuntimeMessageTagName = "message"
+GeoMessageTagName = "geomessage"
+CurrentMessageFormat = RuntimeMessageFormat    
+MessageVersion = "1.0"
+    
+def getBaseMessageTag() : 
+    if (CurrentMessageFormat == RuntimeMessageFormat) :
+        return RuntimeMessageTagName
+    else :
+        return GeoMessageTagName
+
+def getMessageRootTag():        
+    return getBaseMessageTag() + "s" # ex: "messages"
+    
+def getMessageTag():        
+    return getBaseMessageTag() # ex: "message"
+    
+def getMessageVersion():        
+    return MessageVersion    
+##########################################################
+
+##########################################################
+# Handles Common geometry list conversions
 
 def pointsToArcPyGeometry(pointList, shapeType) : 
 

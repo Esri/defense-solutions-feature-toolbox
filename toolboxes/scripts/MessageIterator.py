@@ -13,7 +13,8 @@
 # limitations under the License.
 #----------------------------------------------------------------------------------
 # MessageIterator.py
-# Description: Iterates through an xml file with Runtime Military Message format 
+# Description: Iterates through an xml file with Runtime/GeoMessage Message format 
+#              and returns message tags/values as a dictionary
 #----------------------------------------------------------------------------------
 
 import xml.dom.minidom
@@ -21,6 +22,10 @@ import os.path
 import DictionaryConstants
 
 class MessageIterator:
+    
+    # The Tag to search for
+    MessageTagName = "message"      # ex. message -or- geomessage
+    
     def __init__(self, messageFileName):
         self.messageFileName = messageFileName
 
@@ -29,7 +34,7 @@ class MessageIterator:
             raise IOError(msg)
 
         doc = xml.dom.minidom.parse(messageFileName)
-        self.messageNodes = doc.getElementsByTagName("message")
+        self.messageNodes = doc.getElementsByTagName(MessageIterator.MessageTagName) # ex."message"
         self.currentMessageIndex = 0
         self.lastMessageIndex = len(self.messageNodes) - 1
 
@@ -44,9 +49,18 @@ class MessageIterator:
 
         # print 'Element name: %s' % node.nodeName
 
-        sic = node.getElementsByTagName(DictionaryConstants.Tag_SymbolId)[0].childNodes[0].data
-        controlPoints = node.getElementsByTagName(DictionaryConstants.Tag_ControlPoints)[0].childNodes[0].data
-
+        try : 
+            sic = node.getElementsByTagName(DictionaryConstants.Tag_SymbolId)[0].childNodes[0].data
+        except :
+            print "Warning: No SIDC Tag in Message"
+            sic = DictionaryConstants.DEFAULT_POINT_SIDC
+            
+        try :             
+            controlPoints = node.getElementsByTagName(DictionaryConstants.Tag_ControlPoints)[0].childNodes[0].data
+        except :
+            print "Warning: No ControlPoints Tag in Message"
+            controlPoints = "0.0, 0.0"
+            
         childNodes = node.getElementsByTagName("*")
 
         for childNode in childNodes:

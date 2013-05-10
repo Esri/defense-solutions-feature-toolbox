@@ -28,7 +28,7 @@ import DictionaryConstants
 ### 0 - inputFC
 ### 1 - sidc field
 ### 2 - echeclon field
-### 3 - affiliation ("Friendly", "Hostile", "Neutral", "Unknown")
+### 3 - affiliation ("NOT_SET", "FRIENDLY", "HOSTILE", "NEUTRAL", "UNKNOWN")
 
 try :
 
@@ -67,20 +67,23 @@ try :
         arcpy.AddWarning(msg)
         affiliation = ""
 
-    if (affiliation is "") or (affiliation is None) or (affiliation == "NOT SET") :
+    if (affiliation is "") or (affiliation is None) or (affiliation == "NOT_SET") :
         affiliation = ""
-        # 1st try to derive from feature class name
-        if DictionaryConstants.FRIENDLY_AFFILIATION in dataPath \
-            or DictionaryConstants.FRIENDLY_AFFILIATION in datasetName :
+        # If not set, then try to derive from the feature class name 
+        # This will work with the default Military Features lpk/FGDB
+        dataPathUpper = dataPath.upper()
+        datasetNameUpper = datasetName.upper()
+        if DictionaryConstants.FRIENDLY_AFFILIATION in dataPathUpper \
+            or DictionaryConstants.FRIENDLY_AFFILIATION in datasetNameUpper :
             affiliation = DictionaryConstants.FRIENDLY_AFFILIATION
-        elif DictionaryConstants.HOSTILE_AFFILIATION in dataPath \
-            or DictionaryConstants.HOSTILE_AFFILIATION in datasetName :
+        elif DictionaryConstants.HOSTILE_AFFILIATION in dataPathUpper \
+            or DictionaryConstants.HOSTILE_AFFILIATION in datasetNameUpper :
             affiliation = DictionaryConstants.HOSTILE_AFFILIATION
-        elif DictionaryConstants.NEUTRAL_AFFILIATION in dataPath \
-            or DictionaryConstants.NEUTRAL_AFFILIATION in datasetName :
+        elif DictionaryConstants.NEUTRAL_AFFILIATION in dataPathUpper \
+            or DictionaryConstants.NEUTRAL_AFFILIATION in datasetNameUpper :
             affiliation = DictionaryConstants.NEUTRAL_AFFILIATION
-        elif DictionaryConstants.UNKNOWN_AFFILIATION in dataPath \
-            or DictionaryConstants.UNKNOWN_AFFILIATION in datasetName :
+        elif DictionaryConstants.UNKNOWN_AFFILIATION in dataPathUpper \
+            or DictionaryConstants.UNKNOWN_AFFILIATION in datasetNameUpper :
             affiliation = DictionaryConstants.UNKNOWN_AFFILIATION
     
         if (affiliation is "") or (affiliation is None) :

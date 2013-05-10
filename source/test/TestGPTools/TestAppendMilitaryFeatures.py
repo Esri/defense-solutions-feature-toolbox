@@ -48,7 +48,6 @@ def RunTest():
         # Set environment settings
         print "Running from: " + str(TestUtilities.currentPath)
         print "Geodatabase path: " + str(TestUtilities.geodatabasePath)
-        print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
         arcpy.env.overwriteOutput = True
         arcpy.ImportToolbox(toolbox, "MFT")

@@ -43,18 +43,26 @@ def RunTest():
         
         sidcField = "sic"
         echeclonField = "echelon" 
-        affiliation = "Friendly"
+        affiliation = "FRIENDLY"
                      
         # Zero out the SIDC/SIC field first
         arcpy.CalculateField_management(inputPointsFC, sidcField, '""')
                       
         ########################################################
         # Execute the Model under test:   
-        arcpy.CalcSIDCField_MFT(inputPointsFC, sidcField, echeclonField, affiliation)
+        toolOutput = arcpy.CalcSIDCField_MFT(inputPointsFC, sidcField, echeclonField, affiliation)
         ########################################################
         
-        # Verify the results 
-        # That there are no blank or "Default Unknown/SUGPU----------" SIDC values
+        # Verify the results
+         
+        # 1: Check the expected return value
+        returnedValue = toolOutput.getOutput(0)        
+        if (returnedValue <> inputPointsFC) :
+            print "Unexpected Return Value: " + str(returnedValue)
+            print "Expected: " + str(inputPointsFC)
+            raise Exception("Test Failed")
+                
+        # 2: That there are no blank or "Default Unknown/SUGPU----------" SIDC values
         outputSidcsLayer = "SidcNull_layer"             
         
         arcpy.MakeFeatureLayer_management(inputPointsFC, outputSidcsLayer)

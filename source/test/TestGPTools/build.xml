@@ -18,19 +18,11 @@
   <property name="pythonpath" value="${dir.arcpy}\DLLs;${dir.arcpy}\lib;${dir.arcpy}\lib\plat-win;${dir.arcpy}\lib\lib-tk;${dir.arcpy};${dir.arcpy}\lib\site-packages;${dir.arcgisdesktop}\bin;${dir.arcgisdesktop}\arcpy"/>
 
   <target name="run_all_tests" 
-    depends="get_data,test_config,test_calculate_sidc">
+    depends="TestConfig,TestCalculateSidc,TestAppendMilitaryFeatures,TestCalculateRepRule,TestWriteMessageFile,TestAppendMessageFile,TestWriteMilitaryFeatureFromMessage">
     <echo message="All Tests Complete" />
   </target>
 
-  <target name="get_data">
-    <!-- TODO: determine if we need to run data fetch script here @ ../../build.xml -->
-    <!-- TODO: for now just issue a warning -->
-    <!-- TODO: if needed, change the target in the line below to target="default" -->
-    <ant antfile="${dir.datafetchdir}/build.xml" target="test" />
-    <echo message="INFO: Has Dependent Data task been run from: ${dir.datafetchdir}/build.xml" />
-  </target>
-
-  <target name="test_config">
+  <target name="TestConfig">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
@@ -38,11 +30,51 @@
     </exec>
   </target>
 
-  <target name="test_calculate_sidc">
+  <target name="TestCalculateSidc">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
       <arg line="${dir.src}/TestCalculateSidc.py"/>
+    </exec>
+  </target>
+
+  <target name="TestAppendMilitaryFeatures">
+    <exec executable="${dir.arcpy}/python.exe" failonerror="true">
+      <env key="PYTHONPATH" path="${pythonpath}"/>
+      <arg line="-u"/>
+      <arg line="${dir.src}/TestAppendMilitaryFeatures.py"/>
+    </exec>
+  </target>
+
+  <target name="TestCalculateRepRule">
+    <exec executable="${dir.arcpy}/python.exe" failonerror="true">
+      <env key="PYTHONPATH" path="${pythonpath}"/>
+      <arg line="-u"/>
+      <arg line="${dir.src}/TestCalculateRepRule.py"/>
+    </exec>
+  </target>
+
+  <target name="TestWriteMessageFile">
+    <exec executable="${dir.arcpy}/python.exe" failonerror="true">
+      <env key="PYTHONPATH" path="${pythonpath}"/>
+      <arg line="-u"/>
+      <arg line="${dir.src}/TestWriteMessageFile.py"/>
+    </exec>
+  </target>
+
+  <target name="TestAppendMessageFile">
+    <exec executable="${dir.arcpy}/python.exe" failonerror="true">
+      <env key="PYTHONPATH" path="${pythonpath}"/>
+      <arg line="-u"/>
+      <arg line="${dir.src}/TestAppendMessageFile.py"/>
+    </exec>
+  </target>
+
+  <target name="TestWriteMilitaryFeatureFromMessage">
+    <exec executable="${dir.arcpy}/python.exe" failonerror="true">
+      <env key="PYTHONPATH" path="${pythonpath}"/>
+      <arg line="-u"/>
+      <arg line="${dir.src}/TestWriteMilitaryFeatureFromMessage.py"/>
     </exec>
   </target>
 

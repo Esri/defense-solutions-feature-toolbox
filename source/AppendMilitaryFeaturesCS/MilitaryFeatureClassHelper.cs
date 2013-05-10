@@ -29,15 +29,15 @@ namespace AppendMilitaryFeatures
         }
         private bool initialized = false;
 
-        // *2* Different SIC/SIDC Field Names (?/!)
+        // *2* (or more) Different SIC/SIDC Field Names in MilFeature Schema(?/!)
         public const string SIDC_FIELD_NAME1 = "sic";
-        public const string SIDC_FIELD_NAME2 = "sidc";
+        public static string SIDC_FIELD_NAME2 = "sidc"; // Tricky: Non-const on purpose to allow this to be changed by user
 
         public const string UNIQUE_ID_FIELD_NAME = "uniquedesignation";
         public const string ECHELON_FIELD = "echelon";
         public const string COUNTRY_FIELD = "countrycode";
 
-        // *2* Different Rule Field Names (?/!)
+        // *2* Different Rule Field Names in MilFeature Schema (?/!)
         public const string RULE_FIELD_NAME1 = "ruleid";
         public const string RULE_FIELD_NAME2 = "symbolrule";
 
@@ -172,10 +172,28 @@ namespace AppendMilitaryFeatures
                     return null;
 
                 char[] fileSeparator = new char[]{'\\'};
-                string featureDatasetName = datasetNameAndFeatureClass.Split(fileSeparator)[1];
-                string featureClassName = datasetNameAndFeatureClass.Split(fileSeparator)[2];
+                var gdbDatasetAndFeatureClassNameList = datasetNameAndFeatureClass.Split(fileSeparator);
+                int nameListLen = gdbDatasetAndFeatureClassNameList.Length;
 
-                foundFeatureClass = GetFeatureClassByName(featureDatasetName, featureClassName);
+                if (nameListLen < 2)
+                {
+                    Console.WriteLine("FGDB is not of the expected format (may not be a FGDB)");
+                    return null;
+                }
+                else if (nameListLen < 3)
+                {
+                    // no dataset in name
+                    string featureClassName = gdbDatasetAndFeatureClassNameList[1];
+
+                    foundFeatureClass = GetFeatureClassByName("None", featureClassName);
+                }
+                else
+                {
+                    string featureDatasetName = gdbDatasetAndFeatureClassNameList[1];
+                    string featureClassName = gdbDatasetAndFeatureClassNameList[2];
+
+                    foundFeatureClass = GetFeatureClassByName(featureDatasetName, featureClassName);
+                }
             }
             catch (Exception ex)
             {
@@ -201,23 +219,30 @@ namespace AppendMilitaryFeatures
                 if (Workspace == null)
                     return null;
 
-                IFeatureDataset inputFeatureDataset = Workspace.OpenFeatureDataset(featureDatasetName);
-
-                if (inputFeatureDataset == null)
-                    return null;
-
-                IEnumDataset eds = inputFeatureDataset.Subsets;
-                eds.Reset();
-                IDataset ds;
-                while ((ds = eds.Next()) != null)
+                if (featureDatasetName == "None") // Don't need to look in Datasets, it is at top-level
                 {
-                    if (ds.Name == featureClassName)
+                    foundFeatureClass = Workspace.OpenFeatureClass(featureClassName);
+                }
+                else
+                {
+                    IFeatureDataset inputFeatureDataset = Workspace.OpenFeatureDataset(featureDatasetName);
+
+                    if (inputFeatureDataset == null)
+                        return null;
+
+                    IEnumDataset eds = inputFeatureDataset.Subsets;
+                    eds.Reset();
+                    IDataset ds;
+                    while ((ds = eds.Next()) != null)
                     {
-                        IFeatureClass inputFeatureClass = ds as IFeatureClass;
-                        if (inputFeatureClass != null)
+                        if (ds.Name == featureClassName)
                         {
-                            foundFeatureClass = inputFeatureClass;
-                            break;
+                            IFeatureClass inputFeatureClass = ds as IFeatureClass;
+                            if (inputFeatureClass != null)
+                            {
+                                foundFeatureClass = inputFeatureClass;
+                                break;
+                            }
                         }
                     }
                 }

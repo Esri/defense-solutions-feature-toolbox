@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #------------------------------------------------------------------------------
-# TestWriteMessageFile.py
+# TestWriteMilitaryFeatureFromMessage.py
 # Description: Automatic Test of GP script/toolbox
 # Requirements: ArcGIS Desktop Standard
 # -----------------------------------------------------------------------------
@@ -26,15 +26,14 @@ import TestUtilities
 
 def RunTest():
     try:
-        arcpy.AddMessage("Starting Test: TestWriteMessageFile")
+        arcpy.AddMessage("Starting Test: TestWriteMilitaryFeatureFromMessage")
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
-        inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
+        inputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"FriendlyUnitsMessages.xml")       
+        inputMessageFileGeoMsg = os.path.join(TestUtilities.outputMessagePath, r"GeoMessageSmall.xml")
 
-        outputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Test-WriteMessageFileFromMilitaryFeatures.xml")       
-
-        outputMessageFileGeoMsg =  os.path.join(TestUtilities.outputMessagePath, r"Test-WriteMessageFileFromMilitaryFeatures-GeoMsg.xml")       
+        outputPointsFC = os.path.join(TestUtilities.outputGDB, r"FriendlyOperations/FriendlyUnits")
                                         
         toolbox = TestUtilities.toolbox
                
@@ -43,38 +42,62 @@ def RunTest():
         print "Geodatabase path: " + str(TestUtilities.geodatabasePath)
         print "Message File path: " + str(TestUtilities.outputMessagePath)
                 
+        startRecordCount = int(arcpy.GetCount_management(outputPointsFC).getOutput(0))
+                
         arcpy.env.overwriteOutput = True
         arcpy.ImportToolbox(toolbox, "MFT")
-        
-        ########################################################
-        # Execute the Model under test:   
-        # Test 1: (Runtime Message Output)                    
-        arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile)
-        ########################################################
-        
-        ########################################################
-        # Execute the Model under test:   
-        # Test 2: (Geo Message Output)                    
-        messageFormat = "ARCGIS_GEOMESSAGE"
-        orderBy = "#"
                      
-        toolOutput = arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFileGeoMsg, orderBy, messageFormat)
         ########################################################
-                
+        # Execute the Model under test:   
+        # Test 1: (Runtime Message Output)
+        toolOutput = arcpy.WriteMilitaryFeatureFromMessageFile_MFT(inputMessageFile, outputPointsFC)
+        ########################################################
+        
         # Verify the results
-        
-        # 1: Check the expected return value
+        # 1a: Check the expected return value (Test 1)
         returnedValue = toolOutput.getOutput(0)        
-        if (returnedValue <> outputMessageFileGeoMsg) :
+        if (returnedValue <> outputPointsFC) :
             print "Unexpected Return Value: " + str(returnedValue)
-            print "Expected: " + str(outputMessageFileGeoMsg)
-            raise Exception("Test Failed")
+            print "Expected: " + str(outputPointsFC)
+            raise Exception("Test Failed")  
         
-        #2: Check Output File Exists        
-        if (not (arcpy.Exists(outputMessageFile) and arcpy.Exists(outputMessageFileGeoMsg))) :
-            print "Expected output file does not exist" 
-            raise Exception("Test Failed")
+        # 2a: Check that Output Record Count is larger that the previous count 
+        #     ie. that it did get appended to
+        endRecordCount = int(arcpy.GetCount_management(outputPointsFC).getOutput(0))
+        print "Record Count Before: " + str(startRecordCount) + ", After: " + str(endRecordCount)
+        
+        if (endRecordCount <= startRecordCount) :
+            print "Expected record count did not increase (was not added to)" 
+            raise Exception("Test Failed")  
+                
+        # reset this for the next test
+        startRecordCount = endRecordCount
+        
+        ########################################################
+        # Execute the Model under test:   
+        # Test 2: (Geo Message Output)    
+        messageFormat = "ARCGIS_GEOMESSAGE"
+                        
+        toolOutput = arcpy.WriteMilitaryFeatureFromMessageFile_MFT(inputMessageFileGeoMsg, outputPointsFC, messageFormat)
+        ########################################################
               
+        # Verify the results
+        # 1b: Check the expected return value
+        returnedValue = toolOutput.getOutput(0)        
+        if (returnedValue <> outputPointsFC) :
+            print "Unexpected Return Value: " + str(returnedValue)
+            print "Expected: " + str(outputPointsFC)
+            raise Exception("Test Failed")  
+        
+        # 2b: Check that Output Record Count is larger that the previous count 
+        #     ie. that it did get appended to
+        endRecordCount = int(arcpy.GetCount_management(outputPointsFC).getOutput(0))
+        print "Record Count Before: " + str(startRecordCount) + ", After: " + str(endRecordCount)
+        
+        if (endRecordCount <= startRecordCount) :
+            print "Expected record count did not increase (was not added to)" 
+            raise Exception("Test Failed")        
+        
         print "Test Successful"        
                 
     except arcpy.ExecuteError: 

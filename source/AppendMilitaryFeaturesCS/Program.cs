@@ -48,34 +48,30 @@ namespace AppendMilitaryFeatures
             bool CALCULATE_REP_RULES_ONLY = false;
             bool success = false;
 
-            if (args.Length < 1)
+            if (args.Length < 2)
             {
                 // If no arguments given, use defaults
-                Console.WriteLine("Usage: AppendMilitaryFeatures InputFeatureClass DestinationGDB [SymbolIdField]");
+                Console.WriteLine("Usage: AppendMilitaryFeatures InputFeatureClass DestinationGDB SymbolIdField");
                 Console.WriteLine("--> WARNING: Missing Arguments, Using Default Values");
             }
-            else if (args.Length < 2)
+            else if (args.Length == 2)
             {
-                // if only 1 argument supplied, assumes this argument is a Military Feature Class
-                // to just calculate the rep rules on
+                // if exactly 2 arguments supplied, assumes we want to calculate the rep rules only 
+                // on the input feature class
                 CALCULATE_REP_RULES_ONLY = true;
 
                 inputFeatureClassString = args[0];
+                sidcFieldName = args[1];
 
                 // For testing: inputFeatureClassString = System.IO.Path.Combine(dataPath, @"geodatabases\test_outputs.gdb\FriendlyOperations\FriendlyUnits");
                 Console.WriteLine("*** Mode set to 'CalculateRepRules Only' ***");
                 Console.WriteLine("--> Running CalculateRepRules on Military FeatureClass" + inputFeatureClassString);
             }
-            else
+            else // >= 3
             {
                 inputFeatureClassString = args[0];
                 destinationGeodatabase = args[1];
-
-                // use default SIDC if none provided
-                if (args.Length < 3)
-                    Console.WriteLine("Using default input [SymbolIdField] value: " + sidcFieldName);
-                else
-                    sidcFieldName = args[2];
+                sidcFieldName = args[2];
             }
 
             //ESRI License Initializer generated code.
@@ -89,7 +85,8 @@ namespace AppendMilitaryFeatures
             MilitaryFeatureAppender appender = new MilitaryFeatureAppender();
             if (CALCULATE_REP_RULES_ONLY)
             {
-                success = appender.CalculateRepRulesFromSidc(inputFeatureClassString);
+                Console.WriteLine("SymbolIdField(2): " + sidcFieldName);
+                success = appender.CalculateRepRulesFromSidc(inputFeatureClassString, sidcFieldName);
             }
             else
             {
@@ -123,13 +120,16 @@ namespace AppendMilitaryFeatures
             if (appender.ErrorCodesToMeaning.ContainsKey(lastErrorCode))
                 genericLastError = appender.ErrorCodesToMeaning[lastErrorCode];
 
-            Console.WriteLine("**********************************************************");
-            Console.WriteLine("ERROR:");
-            Console.WriteLine("Exiting with ERROR:");
-            Console.WriteLine("Error Code:" + lastErrorCode);
-            Console.WriteLine("Generic Error:" + genericLastError);
-            Console.WriteLine("Detailed Error:" + detailedLastError);
-            Console.WriteLine("**********************************************************");
+            if (lastErrorCode != 0) // if there is a meaningful error code returned
+            {
+                Console.WriteLine("**********************************************************");
+                Console.WriteLine("ERROR:");
+                Console.WriteLine("Exiting with ERROR:");
+                Console.WriteLine("Error Code:" + lastErrorCode);
+                Console.WriteLine("Generic Error:" + genericLastError);
+                Console.WriteLine("Detailed Error:" + detailedLastError);
+                Console.WriteLine("**********************************************************");
+            }
 
             return lastErrorCode;
         }

@@ -11,6 +11,8 @@ arc.dir
 *-old.*
 *-old
 *-sav
+*-sav.*
+*Copy.*
 
 #############
 ## Python

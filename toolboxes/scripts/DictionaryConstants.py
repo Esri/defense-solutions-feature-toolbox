@@ -27,12 +27,15 @@ Tag_Width         = "Width"
 Tag_Orientation   = "Orientation"
 Tag_TwoLinesNeeded= "TWOLINES"
 
+MESSAGES_TAG_LIST = [Tag_ControlPoints, Tag_SymbolId, Tag_Wkid, Tag_Id, Tag_Radius, Tag_Length, \
+                        Tag_Width, Tag_Orientation, Tag_TwoLinesNeeded ]
+
 RuleFieldsList = { "ruleid", "symbolrule" }
 
-FRIENDLY_AFFILIATION = "Friendly"
-HOSTILE_AFFILIATION  = "Hostile"
-NEUTRAL_AFFILIATION  = "Neutral"
-UNKNOWN_AFFILIATION  = "Unknown"
+FRIENDLY_AFFILIATION = "FRIENDLY"
+HOSTILE_AFFILIATION  = "HOSTILE"
+NEUTRAL_AFFILIATION  = "NEUTRAL"
+UNKNOWN_AFFILIATION  = "UNKNOWN"
 
 validAffiliations = { FRIENDLY_AFFILIATION, HOSTILE_AFFILIATION, NEUTRAL_AFFILIATION, UNKNOWN_AFFILIATION } 
 
