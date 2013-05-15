@@ -41,6 +41,7 @@ geoConverter = GeometryConverter.GeometryConverter(symbolDictionary)
 
 # Some Military Feature Fields  
 MessageTypeField = "messagetype"
+UniqueDesignationField = "UniqueDesignation"
 SidcFieldChoice1 = "sic"
 SidcFieldChoice2 = "sidc"
 
@@ -49,19 +50,12 @@ DefaultMessageType = "position_report"
 DefaultMessageAction = "update"
 
 ##########################################################
-# Handles different Xml Formats of Runtime and GeoMessage
-GeoMessageFormat="ARCGIS_GEOMESSAGE"
-RuntimeMessageFormat="ARCGIS_RUNTIME"
-RuntimeMessageTagName = "message"
-GeoMessageTagName = "geomessage"
-CurrentMessageFormat = RuntimeMessageFormat    
+# Just in case tag name changes
+MessageTagName = "geomessage"
 MessageVersion = "1.0"
     
 def getBaseMessageTag() : 
-    if (CurrentMessageFormat == RuntimeMessageFormat) :
-        return RuntimeMessageTagName
-    else :
-        return GeoMessageTagName
+    return MessageTagName
 
 def getMessageRootTag():        
     return getBaseMessageTag() + "s" # ex: "messages"

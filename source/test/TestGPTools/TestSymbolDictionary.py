@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #------------------------------------------------------------------------------
-# TestTemplateConfig.py
+# TestSymbolDictionary.py
 # Description: Automatic test of template configuration
 # -----------------------------------------------------------------------------
 
@@ -20,44 +20,12 @@ import arcpy
 import os
 import sys
 import traceback
-
 import TestUtilities
 
 try:
-    print "Testing ArcPy"
-    arcpy.AddMessage("ArcPy works")
-    
-    # Add all datasets that will be needed by the unit tests here
-    print "Checking that all necessary objects exist."    
-      
-    print "Testing Necessary Paths"                
-    
-    print "Running from: " + str(TestUtilities.currentPath)
-           
-    paths2Check = []
-    paths2Check.extend([TestUtilities.outputMessagePath, TestUtilities.geodatabasePath, \
-                        TestUtilities.toolboxesPath])
-    
-    for path2check in paths2Check :
-        if os.path.exists(path2check) :
-            print "Valid Path: " + path2check
-        else :     
-            print "ERROR: Necessary Path not found: " + path2check 
-            raise Exception('Bad Path')
-    
-    print "Testing Necessary Geo Objects"        
-    
-    objects2Check = []
-    objects2Check.extend([TestUtilities.toolbox, TestUtilities.inputGDB, TestUtilities.outputGDB, \
-                          TestUtilities.inputGDBNonMilitaryFeatures ]) 
-    for object2Check in objects2Check :
-        desc = arcpy.Describe(object2Check)
-        if desc == None :
-            print "--> Invalid Object: " + str(object2Check)    
-            arcpy.AddError("Bad Input")
-            raise Exception('Bad Input')
-        else :
-            print "Valid Object: " + desc.Name 
+    arcpy.AddMessage("Starting Test: TestSymbolDictionary")
+
+    ### TODO:
             
     print "Test Successful"
     

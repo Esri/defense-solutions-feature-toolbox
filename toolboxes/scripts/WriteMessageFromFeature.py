@@ -47,7 +47,7 @@ def writeMessageFile() :
             inputFC = os.path.join(MilitaryUtilities.geoDatabasePath, r"/test_inputs.gdb/FriendlyOperations/FriendlyUnits")
         desc = arcpy.Describe(inputFC)
         if desc == None :
-            arcpy.AddError("Bad Input")
+            arcpy.AddError("Bad Input Feature Class")
             return
 
         shapeType = desc.shapeType
@@ -59,18 +59,22 @@ def writeMessageFile() :
         orderBy = arcpy.GetParameterAsText(2)   
         
         # Output Message Format
-        messageFormat = arcpy.GetParameterAsText(3)     
-        
-        if not (messageFormat is "") and not (messageFormat is None) and \
-           (messageFormat == MilitaryUtilities.GeoMessageFormat) :
-            MilitaryUtilities.CurrentMessageFormat = \
-                MilitaryUtilities.GeoMessageFormat         
+        messageTypeField = arcpy.GetParameterAsText(3)        
 
         arcpy.AddMessage("Running with Parameters:")
         arcpy.AddMessage("0 - Input FC: " + str(inputFC))
         arcpy.AddMessage("1 - outputXMLFile: " + str(outputFile))
         arcpy.AddMessage("2 - orderBy: " + orderBy)
-        arcpy.AddMessage("3 - MessageFormat: " + MilitaryUtilities.CurrentMessageFormat)
+        arcpy.AddMessage("3 - MessageTypeField: " + messageTypeField)
+        
+        if DEBUG_GEOMETRY_CONVERSION : 
+            arcpy.AddWarning("Running in Debug Geo-Transformation Mode, symbol will use default/unknown SIDC for shape")
+        
+        if not ((messageTypeField is "") or (messageTypeField is None)) :
+            if desc.Fields.contains(field) :
+                MilitaryUtilities.MessageTypeField = messageTypeField
+            else :
+                arcpy.AddWarning("MessageTypeField does not exist in input: " + MessageTypeField + " , using default")
         
         # Check Output Filename & see handle case if we are appending
         if (outputFile is "") or (outputFile is None) :
@@ -187,7 +191,7 @@ def writeMessageFile() :
         ###################### Write XML file #########################
 
         if not appendFile :
-            # Ex: Next line writes: messageFile.write("<messages>\n") 
+            # Ex: Next line writes: messageFile.write("<geomessages>\n") 
             messageFile.write("<%s>\n" % MilitaryUtilities.getMessageRootTag())            
             
         rowCount = 0
@@ -196,15 +200,41 @@ def writeMessageFile() :
         for row in rows:
             shape = row.shape.getPart(0)
     
-            uniqueId = str(rowCount)
-            if (row.UniqueDesignation is not None):
-                if (row.UniqueDesignation in unitDesignationToId):
-                    uniqueId = unitDesignationToId[row.UniqueDesignation]
-                else:
-                    uniqueId = "{%s}" % str(uuid.uuid4())
-                    unitDesignationToId[row.UniqueDesignation] = uniqueId
-            else:
-                uniqueId = "{%s}" % str(uuid.uuid4())
+            arcpy.AddMessage("Processing row: " + str(rowCount))
+            
+            ##############################################
+            # Map Unique Names to same Unique IDs
+            # IMPORTANT: this section tries to keep Unique Designations mapped to the 
+            #            same Message Unique ID (so they will move in Message Processor), so...
+            # WARNING: if you have repeated Unique Designations,
+            #            they are going to get mapped to the same Unique ID             
+            uniqueId = "{%s}" % str(uuid.uuid4())
+            uniqueDesignation = str(rowCount) # fallback value in case field does not exist
+            
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TODO / IMPORTANT : Disable this flag before using with Simulator Messages
+            FORCE_UNIQUE_IDs = True 
+# forces the creation of new IDs for each row, when not using Simulation Messages 
+# and we want every row to show up, even if someone accidentally used the same "Unique" Designation
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            
+            try :
+                uniqueDesignation = row.getValue(MilitaryUtilities.UniqueDesignationField)
+ 
+                if ((uniqueDesignation is None) or (uniqueDesignation is "")) :
+                    arcpy.AddWarning("Unique Designation is Empty")                     
+                elif (DEBUG_GEOMETRY_CONVERSION or FORCE_UNIQUE_IDs) :                   
+                    pass 
+                else :   
+                    # Otherwise, see if we have seen this Designation before
+                    if (uniqueDesignation in unitDesignationToId):
+                        arcpy.AddMessage("Creating update message for repeated Unique Designation: " + uniqueDesignation)
+                        uniqueId = unitDesignationToId[uniqueDesignation]
+                    else:
+                        unitDesignationToId[uniqueDesignation] = uniqueId
+            except:
+                arcpy.AddWarning("Could not find Unique Designation field in row: " + str(rowCount))                                    
+            ##############################################
 
             # work with "sidc" or "sic"
             try : 
@@ -214,6 +244,11 @@ def writeMessageFile() :
                     SymbolIdCodeVal = row.getValue(MilitaryUtilities.SidcFieldChoice2) # "sidc"
                 except:     
                     SymbolIdCodeVal = None                
+
+            # Note/Important: attributes need to be set in converter so needs declared before geometrytoControlPoints
+            attributes = { } 
+            conversionNotes = None
+            attributes[DictionaryConstants.Tag_Wkid] = wkid  # needed by conversion
                                   
             if SymbolIdCodeVal is None:
                 msg =  "SIDC is not set - did you run CalcSIDCField first?"
@@ -221,12 +256,9 @@ def writeMessageFile() :
                 SymbolIdCodeVal = DictionaryConstants.getDefaultSidcForShapeType(shapeType)
             elif DEBUG_GEOMETRY_CONVERSION :
                 print "Using Debug SIDC"
+                conversionNotes = "Original SIDC: " + SymbolIdCodeVal
+                uniqueDesignation = SymbolIdCodeVal # use this label for debugging
                 SymbolIdCodeVal = DictionaryConstants.getDefaultSidcForShapeType(shapeType)
-
-            # Note/Important: attributes need to be set in converter so needs declared before geometrytoControlPoints
-            attributes = { } 
-            conversionNotes = None
-            attributes[DictionaryConstants.Tag_Wkid] = wkid  # needed by conversion
 
             controlPointsString = MilitaryUtilities.parseGeometryToControlPoints(shape)
             requiresConversion = MilitaryUtilities.geoConverter.requiresConversion(SymbolIdCodeVal)
@@ -239,12 +271,13 @@ def writeMessageFile() :
                 if (conversionNotes == DictionaryConstants.CONVERSION_IGNORE_SECOND_LINE) : 
                     continue
                 elif (transformedPoints is None) :
-                    arcpy.AddError("Conversion FAILED" + conversionNotes)
+                    arcpy.AddWarning("Conversion FAILED for SIC: " + SymbolIdCodeVal + \
+                                     ", Notes: " + conversionNotes + " (using original points)")
                 else :
                     controlPointsString = transformedPoints
 
             # Write Output Message
-            # Ex: Next Line writes: messageFile.write("\t<message v=\"1.0\">\n")            
+            # Ex: Next line writes: ex. "\t<geomessage v=\"1.0\">\n"            
             messageFile.write("\t<%s v=\"%s\">\n" % (MilitaryUtilities.getMessageTag(), \
                                                      MilitaryUtilities.getMessageVersion()))
             
@@ -268,6 +301,11 @@ def writeMessageFile() :
 
             # Note: written with attributes below: messageFile.write("\t\t<_wkid>%i</_wkid>\n" % wkid)
                      
+            if not ((uniqueDesignation is None) or (uniqueDesignation is "")) : 
+                messageFile.write("\t\t<%s>%s</%s>\n" % (DictionaryConstants.Tag_UniqueDesignation, \
+                             uniqueDesignation, DictionaryConstants.Tag_UniqueDesignation))
+                     
+
             # Check on Military Geometries for Lines/Areas
             if (shapeType is "Point"):
                 messageFile.write("\t\t<altitude_depth>%d</altitude_depth>\n" % shape.Z)
@@ -298,11 +336,13 @@ def writeMessageFile() :
                     messageFile.write("\t\t<"+field+">" + fieldValAsString + "</" + field + ">\n")
             ###################Common Fields/Attributes#####################
 
-            # Ex: messageFile.write("\t</message>\n")
+            # Ex: messageFile.write("\t</geomessage>\n")
             messageFile.write("\t</%s>\n" % MilitaryUtilities.getMessageTag())
 
-        # Ex: messageFile.write("</messages>")
-        messageFile.write("</%s>\n" % MilitaryUtilities.getMessageRootTag())       
+        # Ex: messageFile.write("</geomessages>")
+        messageFile.write("</%s>\n" % MilitaryUtilities.getMessageRootTag())
+            
+        arcpy.AddMessage("Rows Processed: " + str(rowCount))   
         arcpy.AddMessage("Write/Append Message File Complete")
         
     except: 

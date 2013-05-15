@@ -31,11 +31,13 @@ def RunTest():
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
         inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
+        desc = arcpy.Describe(inputPointsFC)
+        if desc == None :
+            print "--> Bad Input Object: " + str(inputPointsFC)    
+            raise Exception('Bad Input')
 
         outputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Test-WriteMessageFileFromMilitaryFeatures.xml")       
 
-        outputMessageFileGeoMsg =  os.path.join(TestUtilities.outputMessagePath, r"Test-WriteMessageFileFromMilitaryFeatures-GeoMsg.xml")       
-                                        
         toolbox = TestUtilities.toolbox
                
         # Set environment settings
@@ -47,32 +49,24 @@ def RunTest():
         arcpy.ImportToolbox(toolbox, "MFT")
         
         ########################################################
-        # Execute the Model under test:   
-        # Test 1: (Runtime Message Output)                    
-        arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile)
-        ########################################################
-        
-        ########################################################
-        # Execute the Model under test:   
-        # Test 2: (Geo Message Output)                    
-        messageFormat = "ARCGIS_GEOMESSAGE"
+        # Execute the Model under test:                
+        messageTypeField = "#"
         orderBy = "#"
-                     
-        toolOutput = arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFileGeoMsg, orderBy, messageFormat)
+           
+        toolOutput = arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile, orderBy, messageTypeField)
         ########################################################
                 
-        # Verify the results
-        
+        # Verify the results        
         # 1: Check the expected return value
         returnedValue = toolOutput.getOutput(0)        
-        if (returnedValue <> outputMessageFileGeoMsg) :
+        if (returnedValue <> outputMessageFile) :
             print "Unexpected Return Value: " + str(returnedValue)
-            print "Expected: " + str(outputMessageFileGeoMsg)
+            print "Expected: " + str(outputMessageFile)
             raise Exception("Test Failed")
         
         #2: Check Output File Exists        
-        if (not (arcpy.Exists(outputMessageFile) and arcpy.Exists(outputMessageFileGeoMsg))) :
-            print "Expected output file does not exist" 
+        if not (arcpy.Exists(outputMessageFile)) :
+            print "Expected output file does not exist: " +  outputMessageFile
             raise Exception("Test Failed")
               
         print "Test Successful"        

@@ -25,10 +25,11 @@ Tag_Radius        = "Radius"
 Tag_Length        = "Length"
 Tag_Width         = "Width"
 Tag_Orientation   = "Orientation"
+Tag_UniqueDesignation = "uniquedesignation"
 Tag_TwoLinesNeeded= "TWOLINES"
 
 MESSAGES_TAG_LIST = [Tag_ControlPoints, Tag_SymbolId, Tag_Wkid, Tag_Id, Tag_Radius, Tag_Length, \
-                        Tag_Width, Tag_Orientation, Tag_TwoLinesNeeded ]
+                        Tag_Width, Tag_Orientation, Tag_TwoLinesNeeded, Tag_UniqueDesignation ]
 
 RuleFieldsList = { "ruleid", "symbolrule" }
 
