@@ -60,19 +60,18 @@ def writeFeaturesFromMessageFile() :
     shapeType = desc.shapeType;
 
     # Input Message Format
-    messageFormat = arcpy.GetParameterAsText(2)     
-    
-    if not (messageFormat is "") and not (messageFormat is None) and \
-       (messageFormat == MilitaryUtilities.GeoMessageFormat) :
-        MilitaryUtilities.CurrentMessageFormat = \
-            MilitaryUtilities.GeoMessageFormat     
-        MessageIterator.MessageIterator.MessageTagName = \
-            MilitaryUtilities.getMessageTag()    
+    messageTypeField = arcpy.GetParameterAsText(2)            
 
     arcpy.AddMessage("Running with Parameters:")
     arcpy.AddMessage("0 - input XML File: " + str(inputFileName))
     arcpy.AddMessage("1 - output FC: " + str(outputFC))
-    arcpy.AddMessage("2 - MessageFormat: " + MilitaryUtilities.CurrentMessageFormat)
+    arcpy.AddMessage("2 - MessageTypeField: " + messageTypeField)
+        
+    if not ((messageTypeField is "") or (messageTypeField is None)) :
+        if desc.Fields.contains(field) :
+            MilitaryUtilities.MessageTypeField = messageTypeField
+        else :
+            arcpy.AddWarning("MessageTypeField does not exist in output: " + MessageTypeField + " , using default")
 
     print "Exporting message objects from: " + str(inputFileName)
     print "To Feature Class: " + str(outputFC)

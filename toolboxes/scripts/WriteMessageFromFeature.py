@@ -58,7 +58,7 @@ def writeMessageFile() :
         # Sort Order 
         orderBy = arcpy.GetParameterAsText(2)   
         
-        # Output Message Format
+        # Message Type Field
         messageTypeField = arcpy.GetParameterAsText(3)        
 
         arcpy.AddMessage("Running with Parameters:")

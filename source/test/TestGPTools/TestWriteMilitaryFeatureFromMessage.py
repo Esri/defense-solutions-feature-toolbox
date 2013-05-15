@@ -54,14 +54,14 @@ def RunTest():
         ########################################################
         
         # Verify the results
-        # 1a: Check the expected return value (Test 1)
+        # 1: Check the expected return value (Test 1)
         returnedValue = toolOutput.getOutput(0)        
         if (returnedValue <> outputPointsFC) :
             print "Unexpected Return Value: " + str(returnedValue)
             print "Expected: " + str(outputPointsFC)
             raise Exception("Test Failed")  
         
-        # 2a: Check that Output Record Count is larger that the previous count 
+        # 2: Check that Output Record Count is larger that the previous count 
         #     ie. that it did get appended to
         endRecordCount = int(arcpy.GetCount_management(outputPointsFC).getOutput(0))
         print "Record Count Before: " + str(startRecordCount) + ", After: " + str(endRecordCount)
@@ -72,32 +72,7 @@ def RunTest():
                 
         # reset this for the next test
         startRecordCount = endRecordCount
-        
-        ########################################################
-        # Execute the Model under test:   
-        # Test 2: (Geo Message Output)    
-        messageFormat = "ARCGIS_GEOMESSAGE"
-                        
-        toolOutput = arcpy.WriteMilitaryFeatureFromMessageFile_MFT(inputMessageFileGeoMsg, outputPointsFC, messageFormat)
-        ########################################################
-              
-        # Verify the results
-        # 1b: Check the expected return value
-        returnedValue = toolOutput.getOutput(0)        
-        if (returnedValue <> outputPointsFC) :
-            print "Unexpected Return Value: " + str(returnedValue)
-            print "Expected: " + str(outputPointsFC)
-            raise Exception("Test Failed")  
-        
-        # 2b: Check that Output Record Count is larger that the previous count 
-        #     ie. that it did get appended to
-        endRecordCount = int(arcpy.GetCount_management(outputPointsFC).getOutput(0))
-        print "Record Count Before: " + str(startRecordCount) + ", After: " + str(endRecordCount)
-        
-        if (endRecordCount <= startRecordCount) :
-            print "Expected record count did not increase (was not added to)" 
-            raise Exception("Test Failed")        
-        
+                
         print "Test Successful"        
                 
     except arcpy.ExecuteError: 
