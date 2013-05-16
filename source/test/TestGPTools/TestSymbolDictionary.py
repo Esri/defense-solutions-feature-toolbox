@@ -16,27 +16,28 @@
 # Description: Automatic test of template configuration
 # -----------------------------------------------------------------------------
 
-import arcpy
+#import arcpy
 import os
 import sys
 import traceback
 import TestUtilities
 
 try:
-    arcpy.AddMessage("Starting Test: TestSymbolDictionary")
+#    arcpy.AddMessage("Starting Test: TestSymbolDictionary")
 
-    ### TODO:
+    sys.path.append('../../../toolboxes/scripts') 
+    import MilitaryUtilities
+    
+    symbolDictionary = MilitaryUtilities.symbolDictionary
+    
+    sic2Check = "GHMPOGL-----USG"
+    
+    name = symbolDictionary.symbolIdToName(sic2Check)    
+    geoType = symbolDictionary.symbolIdToGeometryType(sic2Check)
+    
+    print "SIC: " + sic2Check + ", returned Name: " + name + ", GeoType: " + geoType
             
-    print "Test Successful"
-    
-except arcpy.ExecuteError: 
-    # Get the arcpy error messages 
-    msgs = arcpy.GetMessages() 
-    arcpy.AddError(msgs) 
-    print msgs
-    
-    # return a system error code
-    sys.exit(-1)
+    print "Test Successful"    
 
 except:
     # Get the traceback object
@@ -45,15 +46,9 @@ except:
 
     # Concatenate information together concerning the error into a message string
     pymsg = "PYTHON ERRORS:\nTraceback info:\n" + tbinfo + "\nError Info:\n" + str(sys.exc_info()[1])
-    msgs = "ArcPy ERRORS:\n" + arcpy.GetMessages() + "\n"
-
-    # Return python error messages for use in script tool or Python Window
-    arcpy.AddError(pymsg)
-    arcpy.AddError(msgs)
 
     # Print Python error messages for use in Python / Python Window
     print pymsg + "\n"
-    print msgs
     
     # return a system error code  
     sys.exit(-1)

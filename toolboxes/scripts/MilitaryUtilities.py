@@ -45,26 +45,19 @@ UniqueDesignationField = "UniqueDesignation"
 SidcFieldChoice1 = "sic"
 SidcFieldChoice2 = "sidc"
 
-# Some Xml Message Tags  
-DefaultMessageType = "position_report"
-DefaultMessageAction = "update"
-
 ##########################################################
-# Just in case tag name changes
-MessageTagName = "geomessage"
-MessageVersion = "1.0"
-    
+# Getter Methods, just in case tag name changes 
 def getBaseMessageTag() : 
-    return MessageTagName
+    return DictionaryConstants.MessageTagName    # geomessage
 
 def getMessageRootTag():        
-    return getBaseMessageTag() + "s" # ex: "messages"
+    return getBaseMessageTag() + "s" # ex: "geomessages"
     
 def getMessageTag():        
-    return getBaseMessageTag() # ex: "message"
+    return getBaseMessageTag() # ex: "geomessage"
     
 def getMessageVersion():        
-    return MessageVersion    
+    return DictionaryConstants.MessageVersion    # ex. 1.0 
 ##########################################################
 
 ##########################################################

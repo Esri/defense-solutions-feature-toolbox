@@ -24,7 +24,7 @@ import DictionaryConstants
 class MessageIterator:
     
     # The Tag to search for
-    MessageTagName = "message"      # ex. message -or- geomessage
+    MessageTagName = DictionaryConstants.MessageTagName # "geomessage"      # ex. message -or- geomessage
     
     def __init__(self, messageFileName):
         self.messageFileName = messageFileName

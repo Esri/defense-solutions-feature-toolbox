@@ -289,10 +289,10 @@ def writeMessageFile() :
                 f.write("\t\t<_type>%s</_type>\n" % row.getValue(messagetypefield))
             except :             
                 # if not default to position_report
-                messageFile.write("\t\t<_type>%s</_type>\n" % MilitaryUtilities.DefaultMessageType)       
+                messageFile.write("\t\t<_type>%s</_type>\n" % DictionaryConstants.DefaultMessageType)       
                                  
             ##TODO: see if other actions are valid besides just "update"
-            messageFile.write("\t\t<_action>%s</_action>\n" % MilitaryUtilities.DefaultMessageAction) # = update
+            messageFile.write("\t\t<_action>%s</_action>\n" % DictionaryConstants.DefaultMessageAction) # = update
             
             messageFile.write("\t\t<_id>%s</_id>\n" % uniqueId) 
             messageFile.write("\t\t<_control_points>%s</_control_points>\n" % controlPointsString)  

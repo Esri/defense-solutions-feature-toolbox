@@ -30,13 +30,14 @@ def RunTest():
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
-        inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
+        inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")                
         desc = arcpy.Describe(inputPointsFC)
         if desc == None :
             print "--> Bad Input Object: " + str(inputPointsFC)    
             raise Exception('Bad Input')
 
         outputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Test-WriteMessageFileFromMilitaryFeatures.xml")       
+        outputMessageFileDebugFormat = outputMessageFile.replace('.xml', '-Debug.xml')
 
         toolbox = TestUtilities.toolbox
                
@@ -49,11 +50,14 @@ def RunTest():
         arcpy.ImportToolbox(toolbox, "MFT")
         
         ########################################################
-        # Execute the Model under test:                
+        # Execute the Model(s) under test:                
         messageTypeField = "#"
         orderBy = "#"
            
         toolOutput = arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile, orderBy, messageTypeField)
+        
+        # Also run the "Debug Format" tool (that maps everything to unknown , doesn't translate points)
+        arcpy.WriteMessageFileFromMilitaryFeaturesNoGeoTransform_MFT(inputPointsFC, outputMessageFileDebugFormat, orderBy, messageTypeField)
         ########################################################
                 
         # Verify the results        

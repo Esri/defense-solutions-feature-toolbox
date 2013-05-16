@@ -23,7 +23,7 @@ import re
 import arcpy
 
 class SymbolDictionary(object):
-    """description of class"""
+    """ Lookup methods & helpers for mappings between SIDC, Name, GeometryType, etc. """
 
     def __init__(self, dictionaryPathAndFile) :
         self.dictionaryFile = dictionaryPathAndFile
@@ -76,7 +76,7 @@ class SymbolDictionary(object):
             raise IOError(msg) 
 
         print "Using dictionary file: " + self.dictionaryFile
-
+        
     # Helper to RegEx test/validate a SIDC for basic correctness 
     # IMPORTANT: does not guarentee correctness
     def isValidSidc(self, sidc) :
@@ -110,8 +110,12 @@ class SymbolDictionary(object):
             return 'U'
 
     def getMaskedSymbolIdFirst10(self, sic) : 
-        maskedSic = sic[0] + self.getAffiliationChar(sic) \
-            + sic[2] + 'P' + sic[4:10]
+        if len(sic) < 10 :
+            upperSic = DictionaryConstants.DEFAULT_POINT_SIDC 
+        else :
+            upperSic = sic.upper()
+        maskedSic = upperSic[0] + self.getAffiliationChar(upperSic) \
+            + upperSic[2] + 'P' + upperSic[4:10]
         return maskedSic[0:10]
 
     def getSymbolAttribute(self, symbolId, attribute) : 
@@ -122,11 +126,18 @@ class SymbolDictionary(object):
         sqliteConn = sqlite3.connect(symboldictionary)
         sqliteCursor = sqliteConn.cursor()
 
-        lookupSic = self.getMaskedSymbolIdFirst10(symbolId)
+        lookupSic = self.getMaskedSymbolIdFirst10(symbolId)  
+        lookupSic = lookupSic.upper()                  
 
         query = "select " + attribute + " from SymbolInfo where (ID = ?)"
-        sqliteCursor.execute(query, (lookupSic.upper(),))
+        sqliteCursor.execute(query, (lookupSic,))
         sqliteRow = sqliteCursor.fetchone()
+
+        # some only have 'F' version
+        if (sqliteRow == None) :
+            lookupSic = lookupSic[0] + 'F' + lookupSic[2] + 'P' + lookupSic[4:10]
+            sqliteCursor.execute(query, (lookupSic,))
+            sqliteRow = sqliteCursor.fetchone()            
 
         if (sqliteRow == None) :
             print "WARNING: " + symbolId + ":" + attribute + " NOT FOUND"
@@ -146,9 +157,18 @@ class SymbolDictionary(object):
         sqliteCursor = sqliteConn.cursor()
 
         lookupSic = self.getMaskedSymbolIdFirst10(symbolId)
+        lookupSic = lookupSic.upper()
 
-        sqliteCursor.execute("select GeometryType from SymbolInfo where (ID = ?)", (lookupSic.upper(),))
+        query = "select GeometryType from SymbolInfo where (ID = ?)"
+        sqliteCursor.execute(query, (lookupSic,))
         sqliteRow = sqliteCursor.fetchone()
+        
+        # some only have 'F' version
+        if (sqliteRow == None) :
+            lookupSic = lookupSic[0] + 'F' + lookupSic[2] + 'P' + lookupSic[4:10]
+            sqliteCursor.execute(query, (lookupSic,))
+            sqliteRow = sqliteCursor.fetchone()                   
+        
         if (sqliteRow == None) :
             geoType = "None"
         else :
@@ -174,10 +194,13 @@ class SymbolDictionary(object):
 
         lookupSic = self.getMaskedSymbolIdFirst10(symbolId)
         significant8Chars = lookupSic[2:10]
+        significant8Chars = significant8Chars.upper()
 
-        sqliteCursor.execute("select GCT from LnAExceptions where (Significant8Chars = ?)", (significant8Chars.upper(),))
-        sqliteRow = sqliteCursor.fetchone()
-        if (sqliteRow == None) :
+        query = "select GCT from LnAExceptions where (Significant8Chars = ?)"
+        sqliteCursor.execute(query, (significant8Chars,))
+        sqliteRow = sqliteCursor.fetchone() 
+            
+        if (sqliteRow == None) :            
             geoType = self.symbolIdToGeometryType(symbolId)
             if (geoType == DictionaryConstants.POINT_STRING) : 
                 conversionType = DictionaryConstants.GCT_POINT
@@ -191,6 +214,10 @@ class SymbolDictionary(object):
             conversionType = sqliteRow[0]
 
         return conversionType
+    
+    def symbolIdToName(self, symbolId) :
+        symbolName = self.getSymbolAttribute(symbolId, "Name")
+        return symbolName
 
     def symbolIdToRuleId(self, symbolId) : 
 
@@ -200,7 +227,7 @@ class SymbolDictionary(object):
                 print "Rule IDs not initialized"
                 return -1, ""
 
-            symbolName = self.getSymbolAttribute(symbolId, "Name")
+            symbolName = self.symbolIdToName(symbolId)
 
             if (symbolName is None) or (symbolName == "") :
                 print "Symbol Name not found for SIDC: " + symbolId  

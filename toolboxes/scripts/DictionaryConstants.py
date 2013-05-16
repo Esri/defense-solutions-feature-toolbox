@@ -17,6 +17,12 @@
 #----------------------------------------------------------------------------------
 
 # Message Processor Tags
+MessageTagName = "geomessage"
+MessageVersion = "1.0"
+
+DefaultMessageType = "position_report"
+DefaultMessageAction = "update"
+
 Tag_ControlPoints = "_control_points"
 Tag_SymbolId      = "sic"
 Tag_Wkid          = "_wkid"
