@@ -168,7 +168,7 @@ try :
                         echelonString = echelonString.upper()
 
             expectedGeometry = DictionaryConstants.getGeometryStringFromShapeType(desc.shapeType)
-            sidc = MilitaryUtilities.symbolDictionary.SymbolNametoSymbolID(symbolname, echelonString, affiliation, expectedGeometry)
+            sidc = MilitaryUtilities.symbolDictionary.SymbolNametoSymbolIDExt(symbolname, echelonString, affiliation, expectedGeometry)
 
             validSic = MilitaryUtilities.symbolDictionary.isValidSidc(sidc)
 

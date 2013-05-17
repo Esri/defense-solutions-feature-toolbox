@@ -23,7 +23,14 @@ import re
 import arcpy
 
 class SymbolDictionary(object):
-    """ Lookup methods & helpers for mappings between SIDC, Name, GeometryType, etc. """
+    """ 
+    Lookup methods & helpers for mappings between SIDC, Name, GeometryType, etc.
+    Generally just does a straight lookup of the dictionary data file with
+    some attempts to correct common lookup errors (ex. not including "H" when
+    looking up a name for a hostile unit. 
+    TRICKY: the methods that operate on Representation Rule IDs, e.g. symbolIdToRuleId, 
+            must have first have called initializeRulesByMilitaryFeatures(validRepresenationLayer) 
+    """
 
     def __init__(self, dictionaryPathAndFile) :
         self.dictionaryFile = dictionaryPathAndFile
@@ -311,9 +318,17 @@ class SymbolDictionary(object):
         startsWithRegex = "^(TASK - SCREEN).*"
         matching = bool(re.match(startsWithRegex, str.upper()))
         return matching
+    
+    def SymbolNametoSymbolID(self, symbolName) :
+        # Lookup when looking up the Dictionary Name exactly as it appears in the Dictionary 
+        return self.SymbolNametoSymbolIDExt(symbolName, "", "", "")
 
-    def SymbolNametoSymbolID(self, symbolName, echelonString, affiliation, expectedGeometry) :
+    def SymbolNametoSymbolIDExt(self, symbolName, echelonString, affiliation, expectedGeometry) :
 
+        # Attempts to handle the many name cases that show up in Military Features
+        # A straight Dictionary Name to SIDC case should always work, but the names
+        # don't always show up in that form, use SymbolNametoSymbolID for simple case
+         
         foundSIC = False
         add2Map  = False
         symbolNameUpper = symbolName.upper() 
@@ -372,12 +387,13 @@ class SymbolDictionary(object):
                 sidc = sidc[0:10] + self.echelonToSIC1112[echelonString] + sidc[12:]
 
             # Then check affiliation char (the correct one is not always returned)
-            affiliationChar = sidc[1]
-            expectedAffiliationChar = DictionaryConstants.affiliationToAffiliationChar[affiliation]
-
-            if affiliationChar != expectedAffiliationChar :
-                print "Unexpected Affiliation Char: " + affiliationChar + " != " + expectedAffiliationChar
-                sidc = sidc[0] + expectedAffiliationChar + sidc[2:]
+            if not ((affiliation is None) or (affiliation is "")) :  
+                affiliationChar = sidc[1]
+                expectedAffiliationChar = DictionaryConstants.affiliationToAffiliationChar[affiliation]
+    
+                if affiliationChar != expectedAffiliationChar :
+                    print "Unexpected Affiliation Char: " + affiliationChar + " != " + expectedAffiliationChar
+                    sidc = sidc[0] + expectedAffiliationChar + sidc[2:]
 
             if add2Map : 
                 # add the query results to the map (if valid)

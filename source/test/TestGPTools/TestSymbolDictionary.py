@@ -13,29 +13,83 @@
 # limitations under the License.
 #------------------------------------------------------------------------------
 # TestSymbolDictionary.py
-# Description: Automatic test of template configuration
+# Description: Stand-alone unit test of SymbolDictionary class
 # -----------------------------------------------------------------------------
 
-#import arcpy
 import os
 import sys
 import traceback
 import TestUtilities
+ 
+symbolDictionary = None
 
-try:
-#    arcpy.AddMessage("Starting Test: TestSymbolDictionary")
+def TestSimpleDictionaryGeometryException() : 
+    
+    if (symbolDictionary is None) :
+        raise Exception('Null SymbolDictionary') 
+            
+    sic = "GFGPOLAGS-****X"
+    expectedGeometryConversionType = "GCT_ArrowWithOffset"
+    actualGeometryConversionType = "Not done"
+    
+    actualGeometryConversionType = symbolDictionary.symbolIdToGeometryConversionType(sic)
+    
+    print "SIC: " + sic + ", returned Conversion: " + actualGeometryConversionType
+       
+    if (actualGeometryConversionType <> expectedGeometryConversionType) : 
+        raise Exception('Test Failed')  
+    
+def TestNameSicMapping() :
+    
+    if (symbolDictionary is None) :
+        raise Exception('Null SymbolDictionary')
+    
+    name2Check = "Aim Point H"
+    expectedSic = "GHGPGPWA------X"
+    
+    sic = symbolDictionary.SymbolNametoSymbolID(name2Check) 
+   
+    print "Name: " + name2Check + ", returned SIC: " + sic
 
-    sys.path.append('../../../toolboxes/scripts') 
-    import MilitaryUtilities
-    
-    symbolDictionary = MilitaryUtilities.symbolDictionary
-    
-    sic2Check = "GHMPOGL-----USG"
+    if (sic <> expectedSic) :
+        raise Exception('Test Failed')     
+
+def TestSicNameMapping() :
+        
+    if (symbolDictionary is None) :
+        raise Exception('Null SymbolDictionary') 
+        
+    # SIC: GHMPOGL-----USG, returned Name: General Obstacle Line, GeoType: Line
+    sic2Check = "GHMPOGL-----USG"    
+    expectedName = "General Obstacle Line"
+    expectedGeoType = "Line"
     
     name = symbolDictionary.symbolIdToName(sic2Check)    
     geoType = symbolDictionary.symbolIdToGeometryType(sic2Check)
     
     print "SIC: " + sic2Check + ", returned Name: " + name + ", GeoType: " + geoType
+    
+    if not ((name == expectedName) and (geoType == expectedGeoType)) :
+        raise Exception('Test Failed') 
+
+def RunTests() :
+    
+    TestSicNameMapping()
+    TestNameSicMapping()
+    TestSimpleDictionaryGeometryException()
+
+try:
+
+    print("Starting Test: TestSymbolDictionary")    
+        
+    # load this library not in the local dir or pythonpath, so we can test it:   
+    # assumes it is run from the current dir & exists at this relative location  
+    sys.path.append('../../../toolboxes/scripts') 
+    import MilitaryUtilities
+    
+    symbolDictionary = MilitaryUtilities.symbolDictionary
+    
+    RunTests()
             
     print "Test Successful"    
 
