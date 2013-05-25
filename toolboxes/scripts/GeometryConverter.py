@@ -126,7 +126,7 @@ def getAngle(x1, y1, x2, y2) :
     try : 
         degrees = radiansToDegrees(math.atan2(y2 - y1, x2 - x1))
     except : 
-        # should only happend if length == 0 
+        # should only happen if length == 0 
         degrees = 0.0
     return degrees 
 
@@ -134,7 +134,7 @@ def getAngleFromY(x1, y1, x2, y2) :
     try : 
         degrees = radiansToDegrees(math.atan2(x2 - x1, y2 - y1))
     except : 
-        # should only happend if length == 0 
+        # should only happen if length == 0 
         degrees = 0.0
     return degrees 
 
@@ -169,16 +169,16 @@ def scale(scaleFactor, x0, y0, x1, y1) : # Vector V0(x0,y0)->V1(x1,y1)
 
     return x, y
 
-def rotate(angle, x0, y0, x1, y1) : # rotate (x1, y1) about (x0, y0)
+def rotate(angle, x0, y0, x1, y1) : # rotate (x1, y1) about (x0, y0) by angle (degrees)
 
     theta = degreesToRadians(angle)
 
     cosa = math.cos(theta)
     sina = math.sin(theta)
-
-    xp = x0 + ((x1 - x0) * cosa) - ((y0 - y1) * sina)
-    yp = y0 + ((y0 - y1) * cosa) - ((x1 - x0) * sina)
-
+       
+    xp = x0 + ((x1 - x0) * cosa) - ((y1 - y0) * sina)
+    yp = y0 + ((y1 - y0) * cosa) + ((x1 - x0) * sina)
+    
     return xp, yp
 
 def rotateAndScale(angle, scaleFactor, x0, y0, x1, y1) : 
@@ -416,12 +416,17 @@ class GeometryConverter() :
             xe, ye = getXYFromString(endPoint)
 
             # make tail points by just rotating/scaling the original line 
-            x3, y3 = rotateAndScale(-45.0, 0.7, xs, ys, xe, ye)
+            # x3, y3 = rotateAndScale(45.0, 0.7, xs, ys, xe, ye)
+            
+            # Workaround: Just use middle point to handle cases when > 3 points
+            middlePointIndex = int((pointCount - 1) / 2)
+            middlePoint = inPoints[middlePointIndex]                        
 
             outPoints = [] 
             outPoints.append(startPoint)
             outPoints.append(endPoint)
-            outPoints.append(getStringFromXY(x3, y3))
+            # outPoints.append(getStringFromXY(x3, y3))
+            outPoints.append(middlePoint)
 
         elif geoConversion == DictionaryConstants.GCT_FREEHANDREVERSEARROW 	:
             print "GCT_FREEHANDREVERSEARROW"
@@ -559,7 +564,7 @@ class GeometryConverter() :
         elif (geoConversion == DictionaryConstants.GCT_PARALLELLINES) or \
             (geoConversion == DictionaryConstants.GCT_PARALLELLINESMIDLINE)  :	
             print "GCT_PARALLELLINESMIDLINE"
-            print "Points ordered 1, 2 -> 1, 2, derived 3(at mid point of 12)"
+            print "Points ordered 1, 2 -> 1, 2, derived 3(at mid point of 1, 2)"
 
             if pointCount < 2 :
                 print ">= 2 points required"
@@ -571,13 +576,17 @@ class GeometryConverter() :
             xs, ys = getXYFromString(startPoint)
             xe, ye = getXYFromString(endPoint)
 
+            # Workaround: Just use middle point to handle cases when > 3 points
+            middlePointIndex = int((pointCount - 1) / 2)
+            middlePoint = inPoints[middlePointIndex]    
+            
             # make tail points by just rotating/scaling the original line 
-            x3, y3 = rotateAndScale(-30.0, 0.6, xs, ys, xe, ye) # 0.5 * 1.2 = 2 / sqrt(3) 
+            # x3, y3 = rotateAndScale(-30.0, 0.6, xs, ys, xe, ye) # 0.5 * 1.2 = 2 / sqrt(3) 
 
             outPoints = [] 
             outPoints.append(startPoint)
             outPoints.append(endPoint)
-            outPoints.append(getStringFromXY(x3, y3))
+            outPoints.append(middlePoint) # getStringFromXY(x3, y3))
 
         elif geoConversion == DictionaryConstants.GCT_PARALLELLINESWITHTICKS :
             print "GCT_PARALLELLINESWITHTICKS"
@@ -594,10 +603,13 @@ class GeometryConverter() :
             xe, ye = getXYFromString(endPoint)
 
             # make tail points by just rotating/scaling the original line 
-            x1, y1 = rotateAndScale(-90.0, 0.6, xs, ys, xe, ye)
-            x2, y2 = rotateAndScale(-30.0, 1.2, xs, ys, xe, ye)
-            x3, y3 = rotateAndScale(90.0, 0.6, xs, ys, xe, ye)
-            x4, y4 = rotateAndScale(30.0, 1.2, xs, ys, xe, ye)
+            
+            incline = getIncline(xs, ys, xe, ye)
+                        
+            x1, y1 = rotateAndScale(-90.0 * incline, 0.6, xs, ys, xe, ye)
+            x2, y2 = rotateAndScale(-30.0 * incline, 1.2, xs, ys, xe, ye)
+            x3, y3 = rotateAndScale(90.0 * incline, 0.6, xs, ys, xe, ye)
+            x4, y4 = rotateAndScale(30.0 * incline, 1.2, xs, ys, xe, ye)
 
             outPoints = [] 
             outPoints.append(getStringFromXY(x1, y1))
