@@ -71,10 +71,11 @@ def writeMessageFile() :
             arcpy.AddWarning("Running in Debug Geo-Transformation Mode, symbol will use default/unknown SIDC for shape")
         
         if not ((messageTypeField is "") or (messageTypeField is None)) :
-            if desc.Fields.contains(field) :
+            # make sure the messageTypeField exists in the input
+            if messageTypeField in [field.name for field in desc.Fields] :
                 MilitaryUtilities.MessageTypeField = messageTypeField
             else :
-                arcpy.AddWarning("MessageTypeField does not exist in input: " + MessageTypeField + " , using default")
+                arcpy.AddWarning("MessageTypeField does not exist in input: " + messageTypeField + " , using default")
         
         # Check Output Filename & see handle case if we are appending
         if (outputFile is "") or (outputFile is None) :
@@ -250,9 +251,10 @@ def writeMessageFile() :
             conversionNotes = None
             attributes[DictionaryConstants.Tag_Wkid] = wkid  # needed by conversion
                                   
-            if SymbolIdCodeVal is None:
-                msg =  "SIDC is not set - did you run CalcSIDCField first?"
-                arcpy.AddError(msg)
+            if (SymbolIdCodeVal is None) : 
+                if not (DEBUG_GEOMETRY_CONVERSION) :
+                    msg =  "SIDC is not set - did you run CalcSIDCField first?"
+                    arcpy.AddError(msg)
                 SymbolIdCodeVal = DictionaryConstants.getDefaultSidcForShapeType(shapeType)
             elif DEBUG_GEOMETRY_CONVERSION :
                 print "Using Debug SIDC"
