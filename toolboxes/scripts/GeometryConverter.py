@@ -386,20 +386,33 @@ class GeometryConverter() :
                 print ">= 2 points required"
                 return None, DictionaryConstants.CONVERSION_ERROR_VALIDATE_COUNT
 
-            startPoint = inPoints[0]
-            endPoint = inPoints[pointCount-1] # pointCount - just in case more than 2 points were input in ArcMap
+            if pointCount == 2 : 
+                startPoint = inPoints[0]
+                endPoint = inPoints[-1]   
+    
+                xs, ys = getXYFromString(startPoint)
+                xe, ye = getXYFromString(endPoint)
+    
+                # make tail points by just rotating/scaling the original line 
+                incline = getIncline(xs, ys, xe, ye)
+                x3, y3 = rotateAndScale(incline * 30.0, 0.5, xs, ys, xe, ye)
+                middlePoint = getStringFromXY(x3, y3) 
 
-            xs, ys = getXYFromString(startPoint)
-            xe, ye = getXYFromString(endPoint)
-
-            # make tail points by just rotating/scaling the original line 
-            incline = getIncline(xs, ys, xe, ye)
-            x3, y3 = rotateAndScale(incline * 30.0, 0.5, xs, ys, xe, ye)
-
+            else : # pointCount > 2 
+                
+                startPoint = inPoints[0] # pointCount - just in case more than 2 points were input in ArcMap
+                endPoint = inPoints[-1] 
+                
+                middlePointIndex = int((pointCount - 1) / 2)   
+                if (middlePointIndex > 0) and (middlePointIndex < (pointCount - 1)) :             
+                    middlePoint = inPoints[middlePointIndex]
+                else :
+                    middlePoint = inPoints[1]     
+                    
             outPoints = [] 
             outPoints.append(startPoint)
             outPoints.append(endPoint)
-            outPoints.append(getStringFromXY(x3, y3))
+            outPoints.append(middlePoint)
 
         elif geoConversion == DictionaryConstants.GCT_FREEHANDLINE :         	
             print "GCT_FREEHANDLINE"
@@ -436,20 +449,33 @@ class GeometryConverter() :
                 print ">= 2 points required"
                 return None, DictionaryConstants.CONVERSION_ERROR_VALIDATE_COUNT
 
-            startPoint = inPoints[0]
-            endPoint = inPoints[pointCount-1] # pointCount - just in case more than 2 points were input in ArcMap
-
-            xs, ys = getXYFromString(startPoint)
-            xe, ye = getXYFromString(endPoint)
-
-            # make tail points by just rotating/scaling the original line 
-            incline = getIncline(xs, ys, xe, ye)
-            x3, y3 = rotateAndScale((incline * 30.0), 0.5, xs, ys, xe, ye)
+            if pointCount == 2 : 
+                startPoint = inPoints[0]
+                endPoint = inPoints[pointCount-1] # pointCount - just in case more than 2 points were input in ArcMap
+    
+                xs, ys = getXYFromString(startPoint)
+                xe, ye = getXYFromString(endPoint)
+    
+                # make tail points by just rotating/scaling the original line 
+                incline = getIncline(xs, ys, xe, ye)
+                x3, y3 = rotateAndScale((incline * 30.0), 0.5, xs, ys, xe, ye)
+                
+                middlePoint = getStringFromXY(x3, y3)
+            else : # pointCount > 2 
+                
+                startPoint = inPoints[-1] # pointCount - just in case more than 2 points were input in ArcMap
+                endPoint = inPoints[0] 
+                
+                middlePointIndex = int((pointCount - 1) / 2)   
+                if (middlePointIndex > 0) and (middlePointIndex < (pointCount - 1)) :             
+                    middlePoint = inPoints[middlePointIndex]
+                else :
+                    middlePoint = inPoints[1]                
 
             outPoints = [] 
-            outPoints.append(endPoint)
             outPoints.append(startPoint)
-            outPoints.append(getStringFromXY(x3, y3))
+            outPoints.append(endPoint)
+            outPoints.append(middlePoint)
 
         elif geoConversion == DictionaryConstants.GCT_FREEHANDU  :         	
             print "GCT_FREEHANDU"
@@ -500,25 +526,45 @@ class GeometryConverter() :
 
         elif geoConversion == DictionaryConstants.GCT_HOOK :                 	
             print "GCT_HOOK"
-            print "Points ordered 1, 2 -> 2, 1, derived 3(90 degrees to line 21)"
+            
+            print "Points ordered 1, 2, ... n -> n, 3/4n, 0"
+            
+            # OLD: Turns out points are not really ordered this way in ArcMap
+            # print "Points ordered 1, 2 -> 2, 1, derived 3(90 degrees to line 21)"
 
             if pointCount < 2 :
                 print ">= 2 points required"
                 return None, DictionaryConstants.CONVERSION_ERROR_VALIDATE_COUNT
+            
+            if pointCount == 2 :
+                
+                print "Points ordered 1, 2 -> 2, 1, derived 3(90 degrees to line 21)"
 
-            startPoint = inPoints[-1] # pointCount - just in case more than 2 points were input in ArcMap
-            endPoint = inPoints[0] 
-
-            xs, ys = getXYFromString(startPoint)
-            xe, ye = getXYFromString(endPoint)
-
-            # make tail points by just rotating/scaling the original line 
-            x3, y3 = rotateAndScale(-30.0, 1.2, xs, ys, xe, ye)  # 1.2 = 2 / sqrt(3) 
-
+                startPoint = inPoints[-1] # pointCount - just in case more than 2 points were input in ArcMap
+                endPoint = inPoints[0] 
+    
+                xs, ys = getXYFromString(startPoint)
+                xe, ye = getXYFromString(endPoint)
+    
+                # make tail points by just rotating/scaling the original line 
+                x3, y3 = rotateAndScale(30.0, 1.2, xs, ys, xe, ye)  # 1.2 = 2 / sqrt(3) 
+    
+                middlePoint = getStringFromXY(x3, y3)
+            else : # pointCount > 2 
+                
+                startPoint = inPoints[-1] # pointCount - just in case more than 2 points were input in ArcMap
+                endPoint = inPoints[0] 
+                
+                middlePointIndex = int((pointCount - 1) * 0.75)   
+                if (middlePointIndex > 0) and (middlePointIndex < (pointCount - 1)) :             
+                    middlePoint = inPoints[middlePointIndex]
+                else :
+                    middlePoint = inPoints[1]
+                
             outPoints = [] 
             outPoints.append(startPoint)
+            outPoints.append(middlePoint)                
             outPoints.append(endPoint)
-            outPoints.append(getStringFromXY(x3, y3))
 
         elif geoConversion == DictionaryConstants.GCT_HORNS	:				
             print "GCT_HORNS"
@@ -577,16 +623,17 @@ class GeometryConverter() :
             xe, ye = getXYFromString(endPoint)
 
             # Workaround: Just use middle point to handle cases when > 3 points
-            middlePointIndex = int((pointCount - 1) / 2)
-            middlePoint = inPoints[middlePointIndex]    
+            # middlePointIndex = int((pointCount - 1) / 2)
+            # middlePoint = inPoints[middlePointIndex]    
             
             # make tail points by just rotating/scaling the original line 
-            # x3, y3 = rotateAndScale(-30.0, 0.6, xs, ys, xe, ye) # 0.5 * 1.2 = 2 / sqrt(3) 
+            x3, y3 = rotateAndScale(30.0, 0.6, xs, ys, xe, ye) # 0.5 * 1.2 = 2 / sqrt(3) 
 
             outPoints = [] 
             outPoints.append(startPoint)
             outPoints.append(endPoint)
-            outPoints.append(middlePoint) # getStringFromXY(x3, y3))
+            # outPoints.append(middlePoint) # getStringFromXY(x3, y3))
+            outPoints.append(getStringFromXY(x3, y3))
 
         elif geoConversion == DictionaryConstants.GCT_PARALLELLINESWITHTICKS :
             print "GCT_PARALLELLINESWITHTICKS"
@@ -680,7 +727,7 @@ class GeometryConverter() :
             # make tail points by just rotating/scaling the original line 
             x1, y1 = rotateAndScale(90.0, 0.6, xs, ys, xe, ye)
             x2, y2 = rotateAndScale(-90.0, 0.6, xs, ys, xe, ye)
-            x3, y3 = rotateAndScale(30.0, 1.2, xs, ys, xe, ye) # 1.2 = 2 / sqrt(3) 
+            x3, y3 = rotateAndScale(-30.0, 1.2, xs, ys, xe, ye) # 1.2 = 2 / sqrt(3) 
 
             outPoints = [] 
             outPoints.append(getStringFromXY(x1, y1))

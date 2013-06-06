@@ -54,6 +54,21 @@ def TestNameSicMapping() :
     if (sic <> expectedSic) :
         raise Exception('Test Failed')     
 
+def TestNameSicMappingExt() :
+    name2Check = "Limited Access Area"
+    expectedSic = "GHGPGAY-------X"
+    
+    expectedGeometry = 'Area'
+    echelonString = ''
+    affiliation = 'HOSTILE'
+    
+    sic = symbolDictionary.SymbolNametoSymbolIDExt(name2Check, echelonString, affiliation, expectedGeometry)
+
+    print "Name: " + name2Check + ", returned SIC: " + sic
+
+    if (sic <> expectedSic) :
+        raise Exception('Test Failed')   
+
 def TestSicNameMapping() :
         
     if (symbolDictionary is None) :
@@ -71,11 +86,21 @@ def TestSicNameMapping() :
     
     if not ((name == expectedName) and (geoType == expectedGeoType)) :
         raise Exception('Test Failed') 
-
+       
+def CustomTest():
+    if (symbolDictionary is None) :
+        raise Exception('Null SymbolDictionary')
+    
+    print "Put your own custom test / reproducer here"          
+    
 def RunTests() :
+    
+    # For testing a particular bug:
+    # CustomTest()
     
     TestSicNameMapping()
     TestNameSicMapping()
+    TestNameSicMappingExt()
     TestSimpleDictionaryGeometryException()
 
 try:
