@@ -374,7 +374,7 @@ class GeometryConverter() :
                 msg = "IMPORTANT: Circle geometries are not supported by ArcPy"
                 print msg
                 arcpy.AddWarning(msg)
-                msg = "You will need to use a polyline, polygon or run GP.Normalize Tool"
+                msg = "You will need to use a polyline, polygon or run GP.Densify_edit Tool"
                 print msg
                 arcpy.AddWarning(msg)
 

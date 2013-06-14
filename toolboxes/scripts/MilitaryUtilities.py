@@ -89,16 +89,21 @@ def parsePartToControlPoints(part):
     controlPoints = ""
     sep = ""
     
-    for subpart in part:
-        try:
-            # assume it's a point
-            subpartStr = str(subpart.X) + "," + str(subpart.Y)
-            controlPoints = controlPoints + sep + subpartStr
-            sep = ";"
-        except AttributeError:
-            # it's an array of parts, i.e. a part
-            controlPoints = controlPoints + sep + parsePartToControlPoints(subpart)
-            sep = ";"
+    try :
+    
+        for subpart in part:
+            try:
+                # assume it's a point
+                subpartStr = str(subpart.X) + "," + str(subpart.Y)
+                controlPoints = controlPoints + sep + subpartStr
+                sep = ";"
+            except AttributeError:
+                # it's an array of parts, i.e. a part
+                controlPoints = controlPoints + sep + parsePartToControlPoints(subpart)
+                sep = ";"
+                                
+    except :
+        print "Exception in parsePartToControlPoints"   
             
     return controlPoints
 

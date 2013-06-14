@@ -139,15 +139,18 @@ def writeMessageFile() :
         if (messageFile is None) : 
             arcpy.AddError("Output file can't be created, exiting")
             return
-
+        
         ##################Setup for export############################
         # Densify if this is a polygon FC
         if ("Polygon" == shapeType):
-            densifiedFC = "in_memory/DensifiedFC"
-            arcpy.CopyFeatures_management(inputFC, densifiedFC)
-            arcpy.Densify_edit(densifiedFC, "ANGLE", "", "", 10)
-            inputFC = densifiedFC
-
+            try : 
+                densifiedFC = "in_memory/DensifiedFC"
+                arcpy.CopyFeatures_management(inputFC, densifiedFC)
+                arcpy.Densify_edit(densifiedFC, "ANGLE", "", "", 10)
+                inputFC = densifiedFC
+            except :
+                arcpy.AddWarning("Could not densify polygons, skipping. Densify_edit tool failed - is Desktop Standard License available?")
+              
         # Get fields and coded domains
         CODE_FIELD_NAME = "code"
         DESCRIPTION_FIELD_NAME = "description"

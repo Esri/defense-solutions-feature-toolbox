@@ -33,9 +33,12 @@ sidcField = arcpy.GetParameterAsText(2)
 # LOCALS ===========================================
 debug = True # switch off if detailed info not needed
 
-# FUNCTIONS ========================================
+if arcpy.CheckProduct("ArcInfo") <> "Available" :
+    arcpy.AddError("Editing Representation Rules requires Desktop Advanced License (ArcInfo) - Tool can't continue")    
+    raise Exception('License Error')
 
 try:
+            
     # set command line arguments - Note: need quotes("") around command line arguments (to handle spaces)
     arguments = "\"" + str(inputTable) + "\" " + "\"" + str(targetGeodatabase) + "\" " + str(sidcField)
     
