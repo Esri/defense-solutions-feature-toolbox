@@ -34,7 +34,16 @@ import uuid
 ### 3 - MessageFormat: ARCGIS_RUNTIME, ARCGIS_GEOMESSAGE
 
 appendFile = False
-DEBUG_GEOMETRY_CONVERSION = False # True # switch to bypass geometry conversion to keep feature at original placement
+DEBUG_GEOMETRY_CONVERSION = False # switch to bypass geometry conversion to keep feature at original placement
+
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# TODO / IMPORTANT : This flag should be set to false when using with Simulator Messages
+# If false, it will reuse/map the ID/GUID for each UniqueDesignation
+FORCE_UNIQUE_IDs = False 
+# When set to "True" it forces the creation of new IDs for each row, when not using Simulation Messages 
+# and we want every row to show up, even if someone accidentally used the same "Unique" Designation
+# (this was the case with the Test Data provided)
+# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 def writeMessageFile() :
 
@@ -213,14 +222,7 @@ def writeMessageFile() :
             # WARNING: if you have repeated Unique Designations,
             #            they are going to get mapped to the same Unique ID             
             uniqueId = "{%s}" % str(uuid.uuid4())
-            uniqueDesignation = str(rowCount) # fallback value in case field does not exist
-            
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# TODO / IMPORTANT : Disable this flag before using with Simulator Messages
-            FORCE_UNIQUE_IDs = True 
-# forces the creation of new IDs for each row, when not using Simulation Messages 
-# and we want every row to show up, even if someone accidentally used the same "Unique" Designation
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            uniqueDesignation = str(rowCount) # fallback value in case field does not exist            
             
             try :
                 uniqueDesignation = row.getValue(MilitaryUtilities.UniqueDesignationField)
@@ -291,7 +293,7 @@ def writeMessageFile() :
             # Try to get a message type if the field exists
             try :   
                 messageTypeVal = row.getValue(MilitaryUtilities.MessageTypeField)           
-                f.write("\t\t<_type>%s</_type>\n" % row.getValue(messagetypefield))
+                messageFile.write("\t\t<_type>%s</_type>\n" % messageTypeVal)
             except :             
                 # if not default to position_report
                 messageFile.write("\t\t<_type>%s</_type>\n" % DictionaryConstants.DefaultMessageType)       
