@@ -37,9 +37,9 @@ appendFile = False
 DEBUG_GEOMETRY_CONVERSION = False # switch to bypass geometry conversion to keep feature at original placement
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# TODO / IMPORTANT : This flag should be set to false when using with Simulator Messages
+# TODO / IMPORTANT : This flag may need to be set to false when using with Simulator Messages
 # If false, it will reuse/map the ID/GUID for each UniqueDesignation
-FORCE_UNIQUE_IDs = False 
+FORCE_UNIQUE_IDs = True 
 # When set to "True" it forces the creation of new IDs for each row, when not using Simulation Messages 
 # and we want every row to show up, even if someone accidentally used the same "Unique" Designation
 # (this was the case with the Test Data provided)
@@ -47,12 +47,14 @@ FORCE_UNIQUE_IDs = False
 
 def writeMessageFile() :
 
+    foundEmptySIDC = False  # used to detect if any row are found without SIDC set
+
     try :
         arcpy.AddMessage("Starting: Write/Append Message File")
 
         # Get input feature class
         inputFC = arcpy.GetParameter(0)
-        if (inputFC is "" or inputFC is None):
+        if (inputFC == "") or (inputFC is None):
             inputFC = os.path.join(MilitaryUtilities.geoDatabasePath, r"/test_inputs.gdb/FriendlyOperations/FriendlyUnits")
         desc = arcpy.Describe(inputFC)
         if desc == None :
@@ -79,7 +81,7 @@ def writeMessageFile() :
         if DEBUG_GEOMETRY_CONVERSION : 
             arcpy.AddWarning("Running in Debug Geo-Transformation Mode, symbol will use default/unknown SIDC for shape")
         
-        if not ((messageTypeField is "") or (messageTypeField is None)) :
+        if not ((messageTypeField == "") or (messageTypeField is None)) :
             # make sure the messageTypeField exists in the input
             if messageTypeField in [field.name for field in desc.Fields] :
                 MilitaryUtilities.MessageTypeField = messageTypeField
@@ -87,7 +89,7 @@ def writeMessageFile() :
                 arcpy.AddWarning("MessageTypeField does not exist in input: " + messageTypeField + " , using default")
         
         # Check Output Filename & see handle case if we are appending
-        if (outputFile is "") or (outputFile is None) :
+        if (outputFile == "") or (outputFile is None) :
             # For a standalone test (debug) if no output filename provided
             if DEBUG_GEOMETRY_CONVERSION : 
                 defaultOutputName = "Mil2525CMessages-NoTransform.xml"
@@ -227,7 +229,7 @@ def writeMessageFile() :
             try :
                 uniqueDesignation = row.getValue(MilitaryUtilities.UniqueDesignationField)
  
-                if ((uniqueDesignation is None) or (uniqueDesignation is "")) :
+                if ((uniqueDesignation is None) or (uniqueDesignation == "")) :
                     arcpy.AddWarning("Unique Designation is Empty")                     
                 elif (DEBUG_GEOMETRY_CONVERSION or FORCE_UNIQUE_IDs) :                   
                     pass 
@@ -256,11 +258,12 @@ def writeMessageFile() :
             conversionNotes = None
             attributes[DictionaryConstants.Tag_Wkid] = wkid  # needed by conversion
                                   
-            if (SymbolIdCodeVal is None) : 
-                if not (DEBUG_GEOMETRY_CONVERSION) :
-                    msg =  "SIDC is not set - did you run CalcSIDCField first?"
-                    arcpy.AddError(msg)
+            if (SymbolIdCodeVal is None) or (SymbolIdCodeVal == "") : 
                 SymbolIdCodeVal = DictionaryConstants.getDefaultSidcForShapeType(shapeType)
+                if not (DEBUG_GEOMETRY_CONVERSION) :
+                    foundEmptySIDC = True
+                    msg =  "SIDC is not set, using default: " + SymbolIdCodeVal
+                    arcpy.AddWarning(msg)
             elif DEBUG_GEOMETRY_CONVERSION :
                 print "Using Debug SIDC"
                 conversionNotes = "Original SIDC: " + SymbolIdCodeVal
@@ -303,12 +306,12 @@ def writeMessageFile() :
             
             messageFile.write("\t\t<_id>%s</_id>\n" % uniqueId) 
             messageFile.write("\t\t<_control_points>%s</_control_points>\n" % controlPointsString)  
-            if not ((conversionNotes is None) or (conversionNotes is "")) : 
+            if not ((conversionNotes is None) or (conversionNotes == "")) : 
                 messageFile.write("\t\t<ConversionNotes>%s</ConversionNotes>\n" % conversionNotes)
 
             # Note: written with attributes below: messageFile.write("\t\t<_wkid>%i</_wkid>\n" % wkid)
                      
-            if not ((uniqueDesignation is None) or (uniqueDesignation is "")) : 
+            if not ((uniqueDesignation is None) or (uniqueDesignation == "")) : 
                 messageFile.write("\t\t<%s>%s</%s>\n" % (DictionaryConstants.Tag_UniqueDesignation, \
                              uniqueDesignation, DictionaryConstants.Tag_UniqueDesignation))
                      
@@ -350,6 +353,8 @@ def writeMessageFile() :
         messageFile.write("</%s>\n" % MilitaryUtilities.getMessageRootTag())
             
         arcpy.AddMessage("Rows Processed: " + str(rowCount))   
+        if foundEmptySIDC :
+            arcpy.AddWarning("IMPORTANT: Some rows did not have SIDC set - you may need to run CalcSIDCField tool first.")
         arcpy.AddMessage("Write/Append Message File Complete")
         
     except: 
