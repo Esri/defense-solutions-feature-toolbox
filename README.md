@@ -1,4 +1,4 @@
-# military-feature-toolbox
+﻿# military-feature-toolbox
 
 The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
 
@@ -48,6 +48,9 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * Open a Visual Studio Command Prompt: Microsoft Visual Studio 2012 | Visual Studio Tools | Developer Command Prompt for VS2012
         * cd military-feature-toolbox\source\AppendMilitaryFeaturesCS
         * msbuild AppendMilitaryFeatures2010.sln /property:Configuration=Release
+            * NOTE: if you recieve an error message: `'msbuild' is not recognized` 
+            * You may need to add the path the .NET Framework SDK (if multiple SDKs are installed)
+            * E.g. `set path=%path%;C:\Windows\Microsoft.NET\Framework\v4.0.30319`
 * (Optional) Test the command line AppendMilitaryFeatures application
     * cd military-feature-toolbox\application
     * > AppendMilitaryFeatures.exe 
