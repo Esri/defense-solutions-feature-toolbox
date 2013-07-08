@@ -36,8 +36,8 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * To verify your Ant Installation: Open Command Prompt> `ant -h` and verify it runs and returns the ant help correctly 
     * To download the data dependencies 
         * Open Command Prompt>
-        * cd military-feature-toolbox
-        * > ant
+        * `cd military-feature-toolbox`
+        * `> ant`
         * Verify “Build Succeeded”  
         * This will create a directory military-feature-toolbox/data with required data files
 * Update the local ArcGIS Military Style Files to the latest version
@@ -48,25 +48,22 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 * Open and build the Visual Studio Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
     * To use MSBuild to build the solution
         * Open a Visual Studio Command Prompt: Microsoft Visual Studio 2012 | Visual Studio Tools | Developer Command Prompt for VS2012
-        * cd military-feature-toolbox\source\AppendMilitaryFeaturesCS
-        * msbuild AppendMilitaryFeatures2010.sln /property:Configuration=Release
+        * `cd military-feature-toolbox\source\AppendMilitaryFeaturesCS`
+        * `msbuild AppendMilitaryFeatures2010.sln /property:Configuration=Release`
             * NOTE: if you recieve an error message: `'msbuild' is not recognized` 
             * You may need to add the path the .NET Framework SDK (if multiple SDKs are installed)
             * E.g. `set path=%path%;C:\Windows\Microsoft.NET\Framework\v4.0.30319`
 * (Optional) Test the command line AppendMilitaryFeatures application
-    * cd military-feature-toolbox\application
-    * > AppendMilitaryFeatures.exe 
-    * This will verify that the necessary products 
-    * Note: this will use default values of
-        * data\shapefiles\FriendlyForcesSmall.shp 
-        * data\geodatabases\test_outputs.gdb
-        * Symbol_ID
-* Start ArcMap or ArcCatalog and run the Append Military Features Geoprocessing tool at military-feature-toolbox\toolboxes
+    * `cd military-feature-toolbox\application`
+    * `> AppendMilitaryFeatures.exe`
+    * This will verify that the data, products, and licenses necessary to run the application are installed
+    * Note: this will run with default values of (1) data\shapefiles\FriendlyForcesSmall.shp (2) data\geodatabases\test_outputs.gdb (3) Symbol_ID
+* (Optional) Start ArcMap or ArcCatalog and run the Append Military Features Geoprocessing Tool at military-feature-toolbox\toolboxes
     *  IMPORTANT: the output military feature geodatabase must not be open in any other application or the tool will fail with "can not obtain Schema Lock" error
 * To run all GP Tool unit tests
     * Open Command Prompt>
-    * > cd military-feature-toolbox\source\test\TestGPTools
-    * > ant
+    * `> cd military-feature-toolbox\source\test\TestGPTools`
+    * `> ant`
     * Verify "Build Succeeded"
 
 ## Resources
