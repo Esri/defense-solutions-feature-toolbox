@@ -13,11 +13,13 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 
 ## Requirements
 
-* ArcGIS Desktop 10.1 Advanced
-    *  ArcGIS Desktop Advanced license is required to change Representation Rules (e.g. in Append Military Features)
-* Visual Studio 2010 or later
-* ArcObjects .NET Engine or Desktop Development Kit
+* ArcGIS Desktop 10.1 (or later) with Advanced License
+    *  ArcGIS Desktop Advanced License is required to change Representation Rules (e.g. in Append Military Features Tool)
 * Apache Ant - used to download and extract dependent data and run test drivers
+* To build the .NET Solution source in source\AppendMilitaryFeaturesCS you will also need
+    * Visual Studio 2010 or later
+    * ArcObjects .NET Engine or Desktop Development Kit
+    * If you do not require the Append Military Features Tool, you may skip this requirement
 
 ## Instructions
 
@@ -31,7 +33,7 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * Set environment variable `ANT_HOME` to Ant Install Location
         * Add Ant\bin to your path: `%ANT_HOME%\bin`
         * NOTE: Ant requires Java [Runtime Environment (JRE) or Developer Kit (JDK)](http://www.oracle.com/technetwork/java/javase/downloads/index.html) to be installed and the environment variable `JAVA_HOME` to be set to this location
-        * To verify your Ant Installation: Open Command Prompt> `ant -v` and verify it runs and returns the version correctly 
+        * To verify your Ant Installation: Open Command Prompt> `ant -h` and verify it runs and returns the ant help correctly 
     * To download the data dependencies 
         * Open Command Prompt>
         * cd military-feature-toolbox
