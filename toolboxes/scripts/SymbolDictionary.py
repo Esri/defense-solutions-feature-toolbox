@@ -253,7 +253,8 @@ class SymbolDictionary(object):
             if (self.Name2RuleID.has_key(symbolName)) :
                 ruleId = self.Name2RuleID[symbolName]
             else :
-                arcpy.AddWarning("Could not find RuleID for Symbol Name: " + symbolName)
+                
+                # arcpy.AddWarning("Could not find RuleID for Symbol Name: " + symbolName)
 
                 # WORKAROUND: we need to correct some names that don't match between Rules Names and Symbol Names
                 correctedSymbolName = symbolName
@@ -331,12 +332,13 @@ class SymbolDictionary(object):
          
         foundSIC = False
         add2Map  = False
-        symbolNameUpper = symbolName.upper() 
+        symbolNameUpper = symbolName.upper()
+        
         # Tricky: the Append Features Tools adds to the base name with "~" so remove all after "~"
-        # see SymbolCreator.cs/GetRuleNameFromSidc for separator character
-        symbolNameUpper = symbolNameUpper.split("~")[0] 
+        # see SymbolCreator.cs/GetRuleNameFromSidc for separator character/format
+        symbolNameUpper = symbolNameUpper.split("~")[0].strip()
 
-        #print ("Using Symbol " + sidc)
+        # print ("Using Symbol " + sidc)
         if (symbolNameUpper in self.nameToSIC):
             # Skip the SQL query, because we have already found this one (or it is hardcoded)
             sidc = self.nameToSIC[symbolNameUpper]

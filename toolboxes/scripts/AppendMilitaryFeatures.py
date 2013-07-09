@@ -33,7 +33,10 @@ sidcField = arcpy.GetParameterAsText(2)
 # LOCALS ===========================================
 debug = True # switch off if detailed info not needed
 
-if arcpy.CheckProduct("ArcInfo") <> "Available" :
+# Check that we have Advanced/ArcInfo
+licenseState = arcpy.CheckProduct("ArcInfo")
+arcpy.AddMessage("ArcGIS Advanced/ArcInfo license state = " + licenseState)
+if (licenseState == "Unavailable") or (licenseState == "NotLicensed") :
     arcpy.AddError("Editing Representation Rules requires Desktop Advanced License (ArcInfo) - Tool can't continue")    
     raise Exception('License Error')
 

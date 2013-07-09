@@ -33,6 +33,8 @@ import traceback
 
 def writeFeaturesFromMessageFile() :
 
+    foundEmptyRuleId = False  # used to detect if we can not set a RuleID for any rows
+
     # Get the input message file
     inputFileName = arcpy.GetParameterAsText(0)
     if (inputFileName is "" or inputFileName is None):
@@ -144,7 +146,8 @@ def writeFeaturesFromMessageFile() :
                 ruleId, symbolName = MilitaryUtilities.symbolDictionary.symbolIdToRuleId(sic)
 
                 if ruleId < 0 :
-                    arcpy.AddWarning("WARNING: Could not map ruleId to SIDC: " + sic)
+                    foundEmptyRuleId = True
+                    # arcpy.AddWarning("WARNING: Could not map ruleId to SIDC: " + sic)
 
                 # For those SIC that map to 2 lines (ex. Task Screen/Guard/Cover)
                 # will need to clone/repeat the message here for Left/Right Upper/Lower pair
@@ -215,6 +218,9 @@ def writeFeaturesFromMessageFile() :
             
         if messageCount == 0 :
             arcpy.AddWarning("No Messages Found in Input")
+
+        if foundEmptyRuleId :
+            arcpy.AddWarning("IMPORTANT: Some rows do not have Symbol RuleId set - you may need to run CalcRepRuleField tool.")            
            
     except :
         tb = traceback.format_exc()

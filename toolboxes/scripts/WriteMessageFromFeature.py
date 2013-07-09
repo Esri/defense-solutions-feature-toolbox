@@ -152,6 +152,11 @@ def writeMessageFile() :
             return
         
         ##################Setup for export############################
+
+        # We need to set overwriteOutput=true or the tools below may fail
+        previousOverwriteOutputSetting = arcpy.env.overwriteOutput
+        arcpy.env.overwriteOutput = True
+        
         # Densify if this is a polygon FC
         if ("Polygon" == shapeType):
             try : 
@@ -177,7 +182,12 @@ def writeMessageFile() :
                     gdbPath = dataPath.split(".gdb")[0]
                     gdbPath += ".gdb"
                     arcpy.DomainToTable_management(gdbPath, field.domain, "in_memory/" + field.domain, CODE_FIELD_NAME, DESCRIPTION_FIELD_NAME)
-        print fieldNameList
+
+        # print fieldNameList
+
+        # restore this setting (set above)
+        arcpy.env.overwriteOutput = previousOverwriteOutputSetting
+        
         # Projected or geographic?
         xname = "lon"
         yname = "lat"
