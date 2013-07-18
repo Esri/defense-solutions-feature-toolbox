@@ -3,26 +3,25 @@
  Build.xml
  Description: Ant script used to run test drivers
  Requirements: Java JRE, Ant, ArcGIS Desktop with ArcPy
- Note: If your ArcGIS/Arcpy is not at default locations you will need to edit the paths below
  -->
 
-<project name="DefenseAndIntelToolboxTest" basedir="." default="run_all_tests">
+<project name="MilitaryFeatureToolboxTest" basedir="." default="run_all_tests">
+
+<import file="./versions.xml"/>
 
   <!-- templatehome = military-feature-toolbox -->
 
-  <property name="dir.arcpy" value="C:\Python27\ArcGIS10.1"/>
-  <property name="dir.arcgisdesktop" value="C:\Program Files (x86)\ArcGIS\Desktop10.1"/>
   <property name="dir.src" value="."/>
   <property name="dir.datafetchdir" value="../../../"/>
 
   <property name="pythonpath" value="${dir.arcpy}\DLLs;${dir.arcpy}\lib;${dir.arcpy}\lib\plat-win;${dir.arcpy}\lib\lib-tk;${dir.arcpy};${dir.arcpy}\lib\site-packages;${dir.arcgisdesktop}\bin;${dir.arcgisdesktop}\arcpy"/>
 
   <target name="run_all_tests" 
-    depends="TestConfig,TestCalculateSidc,TestAppendMilitaryFeatures,TestCalculateRepRule,TestWriteMessageFile,TestAppendMessageFile,TestWriteMilitaryFeatureFromMessage">
+    depends="set_all_variables,TestConfig,TestCalculateSidc,TestAppendMilitaryFeatures,TestCalculateRepRule,TestWriteMessageFile,TestAppendMessageFile,TestWriteMilitaryFeatureFromMessage">
     <echo message="All Tests Complete" />
   </target>
 
-  <target name="TestConfig">
+  <target name="TestConfig" depends="set_all_variables">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
@@ -30,7 +29,7 @@
     </exec>
   </target>
 
-  <target name="TestCalculateSidc">
+  <target name="TestCalculateSidc" depends="set_all_variables">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
@@ -38,7 +37,7 @@
     </exec>
   </target>
 
-  <target name="TestAppendMilitaryFeatures">
+  <target name="TestAppendMilitaryFeatures" depends="set_all_variables">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
@@ -46,7 +45,7 @@
     </exec>
   </target>
 
-  <target name="TestCalculateRepRule">
+  <target name="TestCalculateRepRule" depends="set_all_variables">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
@@ -54,7 +53,7 @@
     </exec>
   </target>
 
-  <target name="TestWriteMessageFile">
+  <target name="TestWriteMessageFile" depends="set_all_variables">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
@@ -62,7 +61,7 @@
     </exec>
   </target>
 
-  <target name="TestAppendMessageFile">
+  <target name="TestAppendMessageFile" depends="set_all_variables">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>
@@ -70,7 +69,7 @@
     </exec>
   </target>
 
-  <target name="TestWriteMilitaryFeatureFromMessage">
+  <target name="TestWriteMilitaryFeatureFromMessage" depends="set_all_variables">
     <exec executable="${dir.arcpy}/python.exe" failonerror="true">
       <env key="PYTHONPATH" path="${pythonpath}"/>
       <arg line="-u"/>

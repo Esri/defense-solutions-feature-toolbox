@@ -30,10 +30,9 @@ def RunTest():
                     
         # Prior to this, run TestTemplateConfig.py to verify the expected configuration exists
 
-        inputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"FriendlyUnitsMessages.xml")       
         inputMessageFileGeoMsg = os.path.join(TestUtilities.outputMessagePath, r"GeoMessageSmall.xml")
 
-        outputPointsFC = os.path.join(TestUtilities.outputGDB, r"FriendlyOperations/FriendlyUnits")
+        outputPointsFC = os.path.join(TestUtilities.outputGDB, r"FriendlyOperations/FriendlyEquipment")
                                         
         toolbox = TestUtilities.toolbox
                
@@ -50,7 +49,7 @@ def RunTest():
         ########################################################
         # Execute the Model under test:   
         # Test 1: (Runtime Message Output)
-        toolOutput = arcpy.WriteMilitaryFeatureFromMessageFile_MFT(inputMessageFile, outputPointsFC)
+        toolOutput = arcpy.WriteMilitaryFeatureFromMessageFile_MFT(inputMessageFileGeoMsg, outputPointsFC)
         ########################################################
         
         # Verify the results

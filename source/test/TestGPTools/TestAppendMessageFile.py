@@ -33,7 +33,7 @@ def RunTest():
 
         inputPointsFC = os.path.join(TestUtilities.inputGDB, r"FriendlyOperations/FriendlyUnits")
 
-        copyMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Mil2525CMessages-SampleOutput.xml")                   
+        copyMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"GeoMessageSmall.xml")                   
 
         outputMessageFile =  os.path.join(TestUtilities.outputMessagePath, r"Test-AppendMessageFileFromMilitaryFeatures.xml")
         
