@@ -1,4 +1,4 @@
-﻿# military-feature-toolbox
+# military-feature-toolbox
 
 The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
 
@@ -42,12 +42,12 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * This will create a directory military-feature-toolbox/data with required data files
 * Update the local ArcGIS Military Style Files to the latest version
     * Navigate to the folder military-feature-toolbox\data\stylefiles
-    * Update/copy all of the .style files from this folder into your ArcGIS Desktop Style folder
+    * Update/copy all of the .style files from this folder into your ArcGIS Desktop Style folder (Overwrite if necessary)
     * For example, copy the style files from above location into this Desktop Folder:
     	* {ArcGIS Install Location}\ArcGIS\Desktop10.1\Styles
 * Open and build the Visual Studio Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
     * To use MSBuild to build the solution
-        * Open a Visual Studio Command Prompt: Microsoft Visual Studio 2012 | Visual Studio Tools | Developer Command Prompt for VS2012
+        * Open a Visual Studio Command Prompt: Start Menu | Microsoft Visual Studio 2010/2012 | Visual Studio Tools | Developer Command Prompt for VS 2010/2012
         * `cd military-feature-toolbox\source\AppendMilitaryFeaturesCS`
         * `msbuild AppendMilitaryFeatures2010.sln /property:Configuration=Release`
             * NOTE: if you recieve an error message: `'msbuild' is not recognized` 
@@ -56,6 +56,7 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 * (Optional) Test the command line AppendMilitaryFeatures application
     * `cd military-feature-toolbox\application`
     * `> AppendMilitaryFeatures.exe`
+    * Verify `AppendMilitaryFeatures.exe Succeeded.`
     * This will verify that the data, products, and licenses necessary to run the application are installed
     * Note: this will run with default values of (1) data\shapefiles\FriendlyForcesSmall.shp (2) data\geodatabases\test_outputs.gdb (3) Symbol_ID
 * (Optional) Start ArcMap or ArcCatalog and run the Append Military Features Geoprocessing Tool at military-feature-toolbox\toolboxes
