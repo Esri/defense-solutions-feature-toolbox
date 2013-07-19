@@ -108,7 +108,9 @@ namespace TestSymbolCreator
             "SFGAEVAL-------",
             "SFSAXR---------",
             "SFUASN---------",
-            "SFFAGP---------"});
+            "SFFAGP---------",
+            "WAS-PLT---P----",
+            "EHOPDGC--------"});
             this.cbSymbolId.Location = new System.Drawing.Point(64, 12);
             this.cbSymbolId.Name = "cbSymbolId";
             this.cbSymbolId.Size = new System.Drawing.Size(121, 21);

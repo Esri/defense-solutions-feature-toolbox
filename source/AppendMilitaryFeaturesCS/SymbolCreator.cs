@@ -562,7 +562,7 @@ namespace AppendMilitaryFeatures
 
             if (ms == null)
             {
-                LogError(String.Format("Generic MarkerSymbol returned null when loading for sic : {0}", symbolId));
+                LogError(String.Format("Generic MarkerSymbol returned null when looking for sic : {0}", symbolId));
                 return null;
             }
 
@@ -708,9 +708,13 @@ namespace AppendMilitaryFeatures
                 string symbolId = (sic.Substring(0, 10) + ((IsValidSicInstallation(sic) == true) ? "H----" : "-----")).ToUpper();
 
 //**********************
-// TODO: Go over this method and verify, looks like some problems
+// TODO: Go over this method and verify, looks like some problems, 
+// --> this whole method should be re-written more sensibly
 //**********************
                 char codingScheme = symbolId[0];
+
+                if (codingScheme == 'W') // don't need the masked form
+                    symbolId = sic;
 
                 StringBuilder sb;
                 if (codingScheme == 'G')
