@@ -170,12 +170,12 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>mkdir $(ProjectDir)..\..\application
-copy $(TargetFileName) $(ProjectDir)..\..\application
-copy $(TargetDir)\*.dll $(ProjectDir)..\..\application
-copy $(TargetDir)\*.xml $(ProjectDir)..\..\application
-mkdir $(ProjectDir)..\..\application\Data
-copy $(TargetDir)\Data\*.* $(ProjectDir)..\..\application\Data</PostBuildEvent>
+    <PostBuildEvent>mkdir "$(ProjectDir)..\..\application"
+copy "$(TargetFileName)" "$(ProjectDir)..\..\application" 
+copy "$(TargetDir)\*.dll" "$(ProjectDir)..\..\application" 
+copy "$(TargetDir)\*.xml" "$(ProjectDir)..\..\application"
+mkdir "$(ProjectDir)..\..\application\Data"
+copy "$(TargetDir)\Data\*.*" "$(ProjectDir)..\..\application\Data"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
