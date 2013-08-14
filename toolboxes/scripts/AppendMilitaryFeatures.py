@@ -49,10 +49,10 @@ try:
     # AppendMilitaryFeatures.exe <inputFeatureClass> <outputGDB> [sicField]
     currentPath = os.path.dirname(__file__)
     EXE_PATH = os.path.normpath(os.path.join(currentPath, r"../../application/"))
-    EXE_PATH_AND_FILE = os.path.join(EXE_PATH, r"AppendMilitaryFeatures.exe")
+    EXE_PATH_AND_FILE = "\"" + os.path.join(EXE_PATH, r"AppendMilitaryFeatures.exe") + "\""
     EXE_CMD = EXE_PATH_AND_FILE + r" " + arguments
-    LOG_FILENAME = os.path.join(EXE_PATH, r"log.txt")
-    COMMAND_LINE = EXE_CMD + r" > " + LOG_FILENAME    
+    LOG_FILENAME = os.path.normpath(os.path.join(EXE_PATH, r"log.txt"))
+    COMMAND_LINE = EXE_CMD + r" > " + "\"" + LOG_FILENAME + "\""
     # Ex: COMMAND_LINE=r"AppendMilitaryFeatures.exe arg1 arg2 arg3 > c:/temp/log.txt"
     
     # Run the command at a command prompt
