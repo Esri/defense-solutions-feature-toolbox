@@ -65,7 +65,8 @@ namespace AppendMilitaryFeatures
         /// <returns>Success: True/False</returns>
         public bool Process(string inputFeatureClassString,
                              string destinationGeodatabase,
-                             string sidcFieldName)
+                             string sidcFieldName,
+                             string standard)
         {
             bool success = false;
 
@@ -119,7 +120,7 @@ namespace AppendMilitaryFeatures
                 return false;
             }
 
-            symbolCreator = new SymbolCreator();
+            symbolCreator = new SymbolCreator(standard);
 
             // where the main work is done of updating the output
             success = updateMatchedRules(matchedRules, inputFeatureClass, sidcFieldName);
@@ -132,13 +133,14 @@ namespace AppendMilitaryFeatures
         /// Military Feature destinationGeodatabase/featurelayer
         /// </summary>
         /// <returns>Success: True/False</returns>
-        public bool CalculateRepRulesFromSidc(string outputMilitaryFeatureClassString, string sidcFieldName)
+        public bool CalculateRepRulesFromSidc(string outputMilitaryFeatureClassString, string sidcFieldName, 
+            string standard)
         {
             bool success = false;
 
             MilitaryFeatureClassHelper.SIDC_FIELD_NAME2 = sidcFieldName;
 
-            symbolCreator = new SymbolCreator();
+            symbolCreator = new SymbolCreator(standard);
 
             militaryFeatures = new MilitaryFeatureClassHelper();
             IFeatureClass outputFeatureClass = militaryFeatures.GetFeatureClassByName(outputMilitaryFeatureClassString);
@@ -363,9 +365,16 @@ namespace AppendMilitaryFeatures
 
                 matchingFeatureCount++;
 
-                Console.WriteLine("Processing Matching Feature: #:{0}, SIDC:{1}, Rule:{2}", matchingFeatureCount, sidc, rule);               
+                Console.WriteLine("Processing Matching Feature: #:{0}, SIDC:{1}, Rule:{2}", matchingFeatureCount, sidc, rule);
 
-                targetFeatureBuffer.Shape = currentFeature.Shape;
+                try
+                {
+                    targetFeatureBuffer.Shape = currentFeature.Shape;
+                }
+                catch (System.Runtime.InteropServices.COMException ce)
+                {
+                    Console.WriteLine("-->Could not copy geometry - you may need to add Z-values or run Fix Geometry Tool");
+                }
 
                 processFieldMapping(currentFeature, targetFeatureBuffer);
 
@@ -774,6 +783,7 @@ namespace AppendMilitaryFeatures
 
         /// <summary>
         /// Check if a rep rule for the selected SymbolIDCode exists and if so returns it
+        /// Ignore Case in check for Rule Name (since Rep Rules ignore case)
         /// </summary>
         /// <returns>-1 if not found</returns>
         private int getRepRuleIdForSidc(IRepresentationClass repClass, string sidc)
@@ -783,7 +793,7 @@ namespace AppendMilitaryFeatures
             if ((symbolCreator == null) || (repClass == null))
                 return -1;
 
-            string symboName = symbolCreator.GetRuleNameFromSidc(sidc);
+            string symboName = symbolCreator.GetRuleNameFromSidc(sidc).ToUpper();
             if (string.IsNullOrEmpty(symboName))
             {
                 Console.WriteLine("Empty Name returned for SIDC: " + sidc);
@@ -801,7 +811,7 @@ namespace AppendMilitaryFeatures
             {
                 if (rule != null)
                 {
-                    string ruleName = repRules.get_Name(ruleID);
+                    string ruleName = repRules.get_Name(ruleID).ToUpper();
 
                     if (ruleName == symboName)
                     {

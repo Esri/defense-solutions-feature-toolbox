@@ -33,12 +33,14 @@ namespace TestSymbolCreator
 {
     public partial class Form1 : Form
     {
-        public Form1()
+        public Form1(string standard)
         {
             InitializeComponent();
+
+            symbolExporter = new SymbolExporter(standard);
         }
 
-        SymbolExporter symbolExporter = new SymbolExporter();
+        SymbolExporter symbolExporter = null; 
 
         private void updateImage(Image image)
         {
@@ -78,7 +80,7 @@ namespace TestSymbolCreator
 
         private void Form1_Load(object sender, EventArgs e)
         {
-
+            this.labelStatus.Text = "Using Symbology: " + symbolExporter.SymbologyStandard;
         }
 
         private void cbSymbolId_SelectedIndexChanged(object sender, EventArgs e)

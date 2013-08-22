@@ -39,7 +39,7 @@ try :
         inputFC = os.path.join(os.path.dirname(__file__),  "TestData/Test_Data_No_Sidc.gdb/FriendlyOperations/FriendlyOperationsL")
 
     if not arcpy.Exists(inputFC) :
-        msg = "Input Dataset does not exist: " + inputFC + " - exiting"
+        msg = "Input Dataset does not exist: " + str(inputFC) + " - exiting"
         arcpy.AddError(msg)
         raise IOError(msg) 
     
@@ -47,12 +47,14 @@ try :
 
     # Get input feature class
     SIDCField = arcpy.GetParameterAsText(1)
-    if (SIDCField is "" or SIDCField is None):
+    if (SIDCField == "" or SIDCField is None):
         SIDCField = "sidc"
 
+    standard = arcpy.GetParameterAsText(2)
+    
     # Get input feature class
-    EchelonField = arcpy.GetParameterAsText(2)
-    if (EchelonField is "" or EchelonField is None):
+    EchelonField = arcpy.GetParameterAsText(3)
+    if (EchelonField == "" or EchelonField is None):
         EchelonField = "echelon"
 
     # Used to infer the affiliation from the dataset name
@@ -60,14 +62,14 @@ try :
     datasetName = desc.name
 
     # Get affiliation, needed because SIDC affiliation cannot always be derived from feature attributes
-    affiliation = arcpy.GetParameterAsText(3)
-    if (not affiliation is "") and (not affiliation is None) and (not affiliation in DictionaryConstants.validAffiliations) :
+    affiliation = arcpy.GetParameterAsText(4)
+    if (not (affiliation == "")) and (not affiliation is None) and (not affiliation in DictionaryConstants.validAffiliations) :
         if (affiliation <> "NOT_SET") :
             msg = "ValidAffiliations are " + str(DictionaryConstants.validAffiliations)
             arcpy.AddWarning(msg)
             affiliation = ""
 
-    if (affiliation is "") or (affiliation is None) or (affiliation == "NOT_SET") :
+    if (affiliation == "") or (affiliation is None) or (affiliation == "NOT_SET") :
         affiliation = ""
         # If not set, then try to derive from the feature class name 
         # This will work with the default Military Features lpk/FGDB
@@ -87,10 +89,9 @@ try :
             affiliation = DictionaryConstants.UNKNOWN_AFFILIATION
     
         if (affiliation is "") or (affiliation is None) :
-            # default to Friendly, if still not set
-            msg = "WARNING: could not determine affiliation, defaulting to " + DictionaryConstants.FRIENDLY_AFFILIATION
-            print msg
-            arcpy.AddError(msg)
+            # default to Friendly, if still not set            
+            arcpy.AddWarning("WARNING: could not determine affiliation, defaulting to " + \
+                           DictionaryConstants.FRIENDLY_AFFILIATION)
             affiliation = DictionaryConstants.FRIENDLY_AFFILIATION
 
     ##Calculation Code
@@ -102,8 +103,11 @@ try :
 
     updatefields = []
 
-    if (SIDCField in fieldNameList):
+    if (SIDCField in fieldNameList) :
         updatefields.append(SIDCField)
+    else :
+        
+        raise arcpy.ExecuteError()
         
     CODE_FIELD_NAME = "code"
     DESCRIPTION_FIELD_NAME = "description"
@@ -188,6 +192,9 @@ try :
 
             # update the feature
             cursor.updateRow(row)
+            
+    # Set output
+    arcpy.SetParameter(5, inputFC)            
 
 except arcpy.ExecuteError: 
     # Get the tool error messages 

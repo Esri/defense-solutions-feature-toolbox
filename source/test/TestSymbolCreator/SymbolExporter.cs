@@ -31,15 +31,30 @@ namespace TestSymbolCreator
 {
     class SymbolExporter
     {
-        SymbolCreator sc = new SymbolCreator();
+        SymbolCreator sc = null;
 
-        public SymbolExporter()
+        public SymbolExporter(string standard)
         {
+            sc = new SymbolCreator(standard);
             sc.Initialize();
+        }
+
+        public string SymbologyStandard
+        {
+            get
+            {
+                if (sc == null)
+                    return String.Empty;
+                else
+                    return sc.SymbologyStandard;
+            }
         }
 
         public string GetDisplayNameFromSic(string sic)
         {
+            if (sc == null)
+                return String.Empty;
+
             return sc.GetRuleNameFromSidc(sic);
         }
 
@@ -62,6 +77,9 @@ namespace TestSymbolCreator
 
         private ISymbol getMilitaryMarker(string sic)
         {
+            if (sc == null)
+                return null;
+
             ISymbol symbol = sc.GetMarkerSymbolFromSIC(sic) as ISymbol;
 
             if (symbol == null)

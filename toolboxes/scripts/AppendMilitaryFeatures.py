@@ -23,27 +23,34 @@ import os, sys, traceback
 import subprocess
 import arcpy
 
-# SCRIPT ARGUMENTS =================================
-inputTable = arcpy.GetParameterAsText(0)
-targetGeodatabase = arcpy.GetParameterAsText(1)
-sidcField = arcpy.GetParameterAsText(2)
-
-# CONSTANTS ========================================
-
-# LOCALS ===========================================
-debug = True # switch off if detailed info not needed
-
-# Check that we have Advanced/ArcInfo
-licenseState = arcpy.CheckProduct("ArcInfo")
-arcpy.AddMessage("ArcGIS Advanced/ArcInfo license state = " + licenseState)
-if (licenseState == "Unavailable") or (licenseState == "NotLicensed") :
-    arcpy.AddError("Editing Representation Rules requires Desktop Advanced License (ArcInfo) - Tool can't continue")    
-    raise Exception('License Error')
 
 try:
+    
+    # SCRIPT ARGUMENTS =================================
+    inputTable = arcpy.GetParameterAsText(0)
+    targetGeodatabase = arcpy.GetParameterAsText(1)
+    sidcField = arcpy.GetParameterAsText(2)
+    standard = arcpy.GetParameterAsText(3)
+    
+    # CONSTANTS ========================================
+    
+    # LOCALS ===========================================
+    debug = True # switch off if detailed info not needed
+    
+    # LICENSE ==========================================
+        
+    # Check that we have Advanced/ArcInfo
+    licenseState = arcpy.CheckProduct("ArcInfo")
+    arcpy.AddMessage("ArcGIS Advanced/ArcInfo license state = " + licenseState)
+    if (licenseState == "Unavailable") or (licenseState == "NotLicensed") :
+        arcpy.AddError("Editing Representation Rules requires Desktop Advanced License (ArcInfo) - Tool can't continue")    
+        raise Exception('License Error')
+            
+    # MAIN ============================================    
             
     # set command line arguments - Note: need quotes("") around command line arguments (to handle spaces)
-    arguments = "\"" + str(inputTable) + "\" " + "\"" + str(targetGeodatabase) + "\" " + str(sidcField)
+    arguments = "\"" + str(inputTable) + "\" " + "\"" + str(targetGeodatabase) \
+        + "\" " + str(sidcField) + " " + str(standard)
     
     # set command string
     # AppendMilitaryFeatures.exe <inputFeatureClass> <outputGDB> [sicField]
@@ -85,7 +92,7 @@ try:
         arcpy.AddError(errorDictionary[retCode])
     
     # Set output
-    arcpy.SetParameter(3,targetGeodatabase)
+    arcpy.SetParameter(4, targetGeodatabase)
 
 except arcpy.ExecuteError: 
     # Get the tool error messages 

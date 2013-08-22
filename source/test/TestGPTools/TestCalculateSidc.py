@@ -37,12 +37,14 @@ def RunTest():
         # Set environment settings
         print "Running from: " + str(TestUtilities.currentPath)
         print "Geodatabase path: " + str(TestUtilities.geodatabasePath)
+        print "Running CalcSIDCField on: " + inputPointsFC
                 
         arcpy.env.overwriteOutput = True
         arcpy.ImportToolbox(toolbox, "MFT")
         
         sidcField = "sic"
-        echeclonField = "echelon" 
+        standard = "2525"
+        echelonField = "echelon" 
         affiliation = "FRIENDLY"
                      
         # Zero out the SIDC/SIC field first
@@ -50,7 +52,7 @@ def RunTest():
                       
         ########################################################
         # Execute the Model under test:   
-        toolOutput = arcpy.CalcSIDCField_MFT(inputPointsFC, sidcField, echeclonField, affiliation)
+        toolOutput = arcpy.CalcSIDCField_MFT(inputPointsFC, sidcField, standard, echelonField, affiliation)
         ########################################################
         
         # Verify the results
