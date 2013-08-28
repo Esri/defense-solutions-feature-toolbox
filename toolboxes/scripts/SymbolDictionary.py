@@ -84,10 +84,20 @@ class SymbolDictionary(object):
 
         print "Using dictionary file: " + self.dictionaryFile
         
+    def getSymbologyStandard(self) :
+        if (self.dictionaryFile is None) or (self.dictionaryFile == "") : 
+            print "WARNING: standard is null, using default"
+            return "NOT SET"
+             
+        if (self.dictionaryFile.upper().find("APP6") >= 0) :
+            return "APP6"
+        else :
+            return "2525"                    
+    
     # Helper to RegEx test/validate a SIDC for basic correctness 
-    # IMPORTANT: does not guarentee correctness
+    # IMPORTANT: does not guarantee correctness
     def isValidSidc(self, sidc) :
-        validSicRegex = "^[SGWIOE][PUAFNSHGWMDLJKO\-][PAGSUFXTMOEVLIRNZ\-][APCDXF\-][A-Z0-9\-]{6}[A-Z\-]{2}[A-Z0-9\-]{2}[AECGNSX\-]$"
+        validSicRegex = "^[SGWIOE][PUAFNSHGWMDLJKO\-][PAGSUFXTMOEVLIRNZC\-][APCDXF\-][A-Z0-9\-]{6}[A-Z\-]{2}[A-Z0-9\-]{2}[AECGNSX\-]$"
         matching = bool(re.match(validSicRegex, sidc))
         return matching
 

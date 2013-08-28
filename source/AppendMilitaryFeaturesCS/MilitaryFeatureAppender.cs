@@ -373,7 +373,7 @@ namespace AppendMilitaryFeatures
                 }
                 catch (System.Runtime.InteropServices.COMException ce)
                 {
-                    Console.WriteLine("-->Could not copy geometry - you may need to add Z-values or run Fix Geometry Tool");
+                    Console.WriteLine("-->Could not copy geometry - you may need to add Z-values or run Fix Geometry Tool, error code=" + ce.ErrorCode);
                 }
 
                 processFieldMapping(currentFeature, targetFeatureBuffer);
@@ -708,7 +708,12 @@ namespace AppendMilitaryFeatures
                 return;
             }
 
-            symbolCreator.Initialize();
+            bool initialized = symbolCreator.Initialize();
+            if (!initialized)
+            {
+                Console.WriteLine("Failed to initialize - could not load required Style Files");
+                return;
+            }
 
             int ruleIdIndex = targetFeatureBuffer.Fields.FindField(MilitaryFeatureClassHelper.RULE_FIELD_NAME1);
             if (ruleIdIndex < 0) // *2* different rule field names, need to check for both

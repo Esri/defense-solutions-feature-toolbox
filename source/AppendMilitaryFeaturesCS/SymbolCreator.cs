@@ -41,14 +41,14 @@ namespace AppendMilitaryFeatures
         /// The Initialize method will load the style files and lookup tables
         /// </summary>
         /// <param name="standardType">"2525" or "APP6"</param>
-        public void Initialize()
+        public bool Initialize()
         {
             if (!initialized)
             {
-                LoadStyleFiles();
+                initialized = LoadStyleFiles();
             }
 
-            initialized = true;
+            return initialized;
         }
 
         public string SymbologyStandard
@@ -1387,8 +1387,10 @@ namespace AppendMilitaryFeatures
         /// <summary>
         /// This method loads the configured style files
         /// </summary>
-        private void LoadStyleFiles()
+        private bool LoadStyleFiles()
         {
+            bool success = false;
+
             IStyleGallery styleGallery = new StyleGalleryClass();
             IStyleGalleryStorage styleGalleryStorage = styleGallery as IStyleGalleryStorage;
 
@@ -1423,6 +1425,10 @@ namespace AppendMilitaryFeatures
                     foreach (string styleFile in styleFiles)
                     {
                         string stylepath = styleGalleryStorage.DefaultStylePath + styleFile;
+
+// TODO: Check files exists and issue warning if not:
+// success = false
+
                         // ex: string stylepath = @"C:\Program Files (x86)\ArcGIS\Desktop10.1\Styles\" + styleFile;
                         styleGalleryStorage.AddFile(stylepath);
 
@@ -1460,6 +1466,10 @@ namespace AppendMilitaryFeatures
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
+
+            success = true;
+
+            return success;
         }
 
         private static void LogDebug(string msg)

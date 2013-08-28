@@ -52,6 +52,8 @@ try :
 
     standard = arcpy.GetParameterAsText(2)
     
+    symbolDictionary = MilitaryUtilities.getSymbolDictionaryStandard(standard)
+    
     # Get input feature class
     EchelonField = arcpy.GetParameterAsText(3)
     if (EchelonField == "" or EchelonField is None):
@@ -172,9 +174,12 @@ try :
                         echelonString = echelonString.upper()
 
             expectedGeometry = DictionaryConstants.getGeometryStringFromShapeType(desc.shapeType)
-            sidc = MilitaryUtilities.symbolDictionary.SymbolNametoSymbolIDExt(symbolname, echelonString, affiliation, expectedGeometry)
-
-            validSic = MilitaryUtilities.symbolDictionary.isValidSidc(sidc)
+                        
+# sidc = MilitaryUtilities.symbolDictionary.SymbolNametoSymbolIDExt(symbolname, echelonString, affiliation, expectedGeometry)
+            sidc = symbolDictionary.SymbolNametoSymbolIDExt(symbolname, echelonString, affiliation, expectedGeometry)
+            
+# validSic = MilitaryUtilities.symbolDictionary.isValidSidc(sidc)
+            validSic = symbolDictionary.isValidSidc(sidc)
 
             if not validSic :
                 # this should not happen, but final check

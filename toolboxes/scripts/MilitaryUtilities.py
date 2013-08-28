@@ -31,13 +31,84 @@ dataPath = os.path.normpath(os.path.join(currentPath, r"../../data/"))
 # IMPORTANT: assumes Mil2525C.dat is at ../../data/dictionary
 dictionaryPath = os.path.normpath(os.path.join(dataPath, r"dictionary/"))
 geoDatabasePath = os.path.normpath(os.path.join(dataPath, r"geodatabases/"))
-symbolDictionaryPath = os.path.join(dictionaryPath,  "Mil2525C.dat" )
+symbolDictionaryPath2525 = os.path.join(dictionaryPath,  "Mil2525C.dat" )
+symbolDictionaryPathAPP6 = os.path.join(dictionaryPath,  "App6b.dat" )
+symbolDictionaryPath = None
 
+def setSymbologyStandard(standard) :
+    
+    global symbolDictionary, symbolDictionaryPath, symbolDictionaryPath2525, \
+        symbolDictionaryPathAPP6
+    
+    if (standard is None) or (standard == "") : 
+        print "WARNING: standard is null, using default"
+        symbolDictionaryPath = symbolDictionaryPath2525
+        return    
+    
+    if standard.upper().find("APP6") >= 0 :
+        symbolDictionaryPath = symbolDictionaryPathAPP6
+    else : 
+        symbolDictionaryPath = symbolDictionaryPath2525
+        
+    return
+    
+def getSymbolDictionary() :
+    
+    global symbolDictionary, symbolDictionaryPath, symbolDictionaryPath2525
+    
+    try :
+    
+        if (symbolDictionaryPath is None) : 
+            print "WARNING: SymbologyStandard / SymbolDictionaryPath has not been set, using default"
+            symbolDictionaryPath = symbolDictionaryPath2525
+        
+        if symbolDictionary is None :         
+            print "Creating Dictionary from: " +  symbolDictionaryPath
+            symbolDictionary = SymbolDictionary.SymbolDictionary(symbolDictionaryPath)
+        
+    except :
+        print "Exception in getSymbolDictionary"    
+        
+    return symbolDictionary
+
+def getSymbolDictionaryStandard(standard) :
+    
+    setSymbologyStandard(standard)    
+    return getSymbolDictionary()
+        
+def getGeometryConverter() :
+ 
+    global geoConverter, symbolDictionary, symbolDictionaryPath, symbolDictionaryPath2525
+    
+    try :
+   
+        if (symbolDictionaryPath is None) : 
+            print "WARNING: SymbologyStandard / SymbolDictionaryPath has not been set, using default"
+            symbolDictionaryPath = symbolDictionaryPath2525
+                
+        if geoConverter is None : 
+            print "Creating GeometryConverter from: " +  symbolDictionaryPath  
+            getSymbolDictionary()
+            geoConverter = GeometryConverter.GeometryConverter(symbolDictionary)
+        
+    except :
+        print "Exception in getGeometryConverter"            
+              
+    return geoConverter
+        
+def getGeometryConverterStandard(standard) :
+    
+    setSymbologyStandard(standard)    
+    return getGeometryConverter()
+        
 # Some common helper objects
-## TODO: may want to switch to lazy initialization since they might not always be needed  
-## For now their _init_ methods are the first thing run so any crash will show up there 
-symbolDictionary = SymbolDictionary.SymbolDictionary(symbolDictionaryPath)
-geoConverter = GeometryConverter.GeometryConverter(symbolDictionary)
+## WARNING: these will not be initialized until getSymbolDictionary / getGeometryConverter
+## are called, this lazy initialization is needed to allow the Symbol Standard to 
+## be set before creation
+
+## TODO: may want to make these private/mangled names (prefix with "__")
+symbolDictionary = None # SymbolDictionary.SymbolDictionary(symbolDictionaryPath)
+geoConverter = None # GeometryConverter.GeometryConverter(symbolDictionary)
 
 # Some Military Feature Fields  
 MessageTypeField = "messagetype"
@@ -71,7 +142,7 @@ def pointsToArcPyGeometry(pointList, shapeType) :
     for point in pointList : 
         x = point.split(',')[0]
         y = point.split(',')[1]
-        print "(", x, ",", y, ")"
+        # print "(", x, ",", y, ")"
         arcPoint.X = float(x)
         arcPoint.Y = float(y)
         arcArray.add(arcPoint)
