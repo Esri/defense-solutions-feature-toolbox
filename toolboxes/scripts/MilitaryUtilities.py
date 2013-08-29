@@ -29,10 +29,10 @@ import DictionaryConstants
 currentPath = os.path.dirname(__file__)
 dataPath = os.path.normpath(os.path.join(currentPath, r"../../data/"))
 # IMPORTANT: assumes Mil2525C.dat is at ../../data/dictionary
-dictionaryPath = os.path.normpath(os.path.join(dataPath, r"dictionary/"))
-geoDatabasePath = os.path.normpath(os.path.join(dataPath, r"geodatabases/"))
-symbolDictionaryPath2525 = os.path.join(dictionaryPath,  "Mil2525C.dat" )
-symbolDictionaryPathAPP6 = os.path.join(dictionaryPath,  "App6b.dat" )
+dictionaryPath2525 = os.path.normpath(os.path.join(dataPath, r"mil2525c/dictionary/"))
+dictionaryPathApp6 = os.path.normpath(os.path.join(dataPath, r"app6b/dictionary/"))
+symbolDictionaryPath2525 = os.path.join(dictionaryPath2525,  "Mil2525C.dat" )
+symbolDictionaryPathAPP6 = os.path.join(dictionaryPathApp6,  "App6b.dat" )
 symbolDictionaryPath = None
 
 def setSymbologyStandard(standard) :
