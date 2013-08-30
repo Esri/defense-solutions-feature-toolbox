@@ -42,6 +42,7 @@ namespace AppendMilitaryFeatures
                 {4, "Output GDB does not exist/can't be opened"},
                 {5, "Exclusive Schema Lock could not be obtained on Output GDB"},
                 {6, "No [SIDC] field in input data"},
+                {7, "Could not find required Style Files. Check ArcGIS/Styles folder"},
                 {99, "Other/Unknown"}
             };
 
@@ -121,6 +122,13 @@ namespace AppendMilitaryFeatures
             }
 
             symbolCreator = new SymbolCreator(standard);
+            bool initialized = symbolCreator.Initialize();
+            if (!initialized)
+            {
+                lastErrorCode = 7; detailedErrorMessage = "Could not load required Style Files. Check ArcGIS/Styles folder.";
+                Console.WriteLine("Failed to initialize - could not load required Style Files");
+                return false;
+            }
 
             // where the main work is done of updating the output
             success = updateMatchedRules(matchedRules, inputFeatureClass, sidcFieldName);
@@ -141,6 +149,13 @@ namespace AppendMilitaryFeatures
             MilitaryFeatureClassHelper.SIDC_FIELD_NAME2 = sidcFieldName;
 
             symbolCreator = new SymbolCreator(standard);
+            bool initialized = symbolCreator.Initialize();
+            if (!initialized)
+            {
+                lastErrorCode = 7; detailedErrorMessage = "Could not load required Style Files. Check ArcGIS/Styles folder.";
+                Console.WriteLine("Failed to initialize - could not load required Style Files");
+                return false;
+            }
 
             militaryFeatures = new MilitaryFeatureClassHelper();
             IFeatureClass outputFeatureClass = militaryFeatures.GetFeatureClassByName(outputMilitaryFeatureClassString);
@@ -708,10 +723,9 @@ namespace AppendMilitaryFeatures
                 return;
             }
 
-            bool initialized = symbolCreator.Initialize();
-            if (!initialized)
+            if (!symbolCreator.Initialized)
             {
-                Console.WriteLine("Failed to initialize - could not load required Style Files");
+                Console.WriteLine("SymbolCreator is not initialized - can't look up SIDCs/symbols");
                 return;
             }
 

@@ -1389,7 +1389,7 @@ namespace AppendMilitaryFeatures
         /// </summary>
         private bool LoadStyleFiles()
         {
-            bool success = false;
+            bool success = true;
 
             IStyleGallery styleGallery = new StyleGalleryClass();
             IStyleGalleryStorage styleGalleryStorage = styleGallery as IStyleGalleryStorage;
@@ -1426,8 +1426,13 @@ namespace AppendMilitaryFeatures
                     {
                         string stylepath = styleGalleryStorage.DefaultStylePath + styleFile;
 
-// TODO: Check files exists and issue warning if not:
-// success = false
+                        if (!System.IO.File.Exists(stylepath))
+                        {
+                            // Check files exists and issue warning and bails if not
+                            success = false;
+                            LogError("Could not find required Style: " + stylepath);
+                            break;
+                        }
 
                         // ex: string stylepath = @"C:\Program Files (x86)\ArcGIS\Desktop10.1\Styles\" + styleFile;
                         styleGalleryStorage.AddFile(stylepath);
@@ -1466,8 +1471,6 @@ namespace AppendMilitaryFeatures
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
-
-            success = true;
 
             return success;
         }

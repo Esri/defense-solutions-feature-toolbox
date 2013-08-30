@@ -28,7 +28,7 @@ namespace AppendMilitaryFeatures
             // default values for stand-alone test
             // assumes current path currentPath: military-feature-toolbox\application
             string currentPath = new System.IO.FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
-            string dataPath =  System.IO.Path.Combine(currentPath, @"..\data");
+            string dataPath = System.IO.Path.Combine(currentPath, @"..\data");
 
             if (!System.IO.Directory.Exists(dataPath))
             {
@@ -41,15 +41,17 @@ namespace AppendMilitaryFeatures
                 }
             }
 
-            string inputFeatureClassString = System.IO.Path.Combine(dataPath, @"shapefiles\FriendlyForcesSmall.shp");
-            string destinationGeodatabase = System.IO.Path.Combine(dataPath, @"geodatabases\test_outputs.gdb");
+            string inputFeatureClassString = System.IO.Path.Combine(dataPath, @"mil2525c\testdata\shapefiles\FriendlyForcesSmall.shp");
+            string destinationGeodatabase = System.IO.Path.Combine(dataPath, @"mil2525c\testdata\geodatabases\test_outputs.gdb");
             string sidcFieldName = "Symbol_ID";
-            string standard = "APP6";
+
+            // Change standard here if you need to run a standalone test
+            string standard = "2525";
 
             if (standard.ToUpper().StartsWith("APP6"))
             {
-                inputFeatureClassString = System.IO.Path.Combine(dataPath, @"shapefiles\APP6\TGPoints.shp");
-                destinationGeodatabase = System.IO.Path.Combine(dataPath, @"geodatabases\MilitaryOverlay-APP6-Output.gdb");
+                inputFeatureClassString = System.IO.Path.Combine(dataPath, @"app6b\testdata\shapefiles\TGPoints.shp");
+                destinationGeodatabase = System.IO.Path.Combine(dataPath, @"app6b\testdata\geodatabases\Military_Overlay-APP6-Output.gdb");
             }
 
             bool CALCULATE_REP_RULES_ONLY = false;

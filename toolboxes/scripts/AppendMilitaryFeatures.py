@@ -79,7 +79,7 @@ try:
     osmsg = "Return Code: " + str(retCode)
     arcpy.AddMessage(osmsg)
 
-    if retCode > 0 :
+    if (retCode > 0) and (retCode < 8) :
         errorDictionary = {}
         errorDictionary[0] = 'No Error'
         errorDictionary[1] = 'Failed to load dependent data files'
@@ -88,6 +88,7 @@ try:
         errorDictionary[4] = 'Output GDB does not exist/can not be opened'
         errorDictionary[5] = 'Exclusive Schema Lock could not be obtained on Output GDB'
         errorDictionary[6] = 'No [SIDC] field in input data'
+        errorDictionary[7] = 'Could not find required Style Files - check ArcGIS Styles folder'
 
         arcpy.AddError(errorDictionary[retCode])
     
