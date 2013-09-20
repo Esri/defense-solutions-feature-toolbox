@@ -28,7 +28,7 @@ namespace AppendMilitaryFeatures
             // default values for stand-alone test
             // assumes current path currentPath: military-feature-toolbox\application
             string currentPath = new System.IO.FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
-            string dataPath =  System.IO.Path.Combine(currentPath, @"..\data");
+            string dataPath = System.IO.Path.Combine(currentPath, @"..\data");
 
             if (!System.IO.Directory.Exists(dataPath))
             {
@@ -41,20 +41,29 @@ namespace AppendMilitaryFeatures
                 }
             }
 
-            string inputFeatureClassString = System.IO.Path.Combine(dataPath, @"shapefiles\FriendlyForcesSmall.shp");
-            string destinationGeodatabase = System.IO.Path.Combine(dataPath, @"geodatabases\test_outputs.gdb");
+            string inputFeatureClassString = System.IO.Path.Combine(dataPath, @"mil2525c\testdata\shapefiles\FriendlyForcesSmall.shp");
+            string destinationGeodatabase = System.IO.Path.Combine(dataPath, @"mil2525c\testdata\geodatabases\test_outputs.gdb");
             string sidcFieldName = "Symbol_ID";
+
+            // Change standard here if you need to run a standalone test
+            string standard = "2525";
+
+            if (standard.ToUpper().StartsWith("APP6"))
+            {
+                inputFeatureClassString = System.IO.Path.Combine(dataPath, @"app6b\testdata\shapefiles\TGPoints.shp");
+                destinationGeodatabase = System.IO.Path.Combine(dataPath, @"app6b\testdata\geodatabases\Military_Overlay-APP6-Output.gdb");
+            }
 
             bool CALCULATE_REP_RULES_ONLY = false;
             bool success = false;
 
-            if (args.Length < 2)
+            if (args.Length < 3)
             {
                 // If no arguments given, use defaults
-                Console.WriteLine("Usage: AppendMilitaryFeatures InputFeatureClass DestinationGDB SymbolIdField");
+                Console.WriteLine("Usage: AppendMilitaryFeatures [InputFeatureClass] [DestinationGDB] [SymbolIdField] [Standard(2525 | APP6)]");
                 Console.WriteLine("--> WARNING: Missing Arguments, Using Default Values");
             }
-            else if (args.Length == 2)
+            else if (args.Length == 3)
             {
                 // if exactly 2 arguments supplied, assumes we want to calculate the rep rules only 
                 // on the input feature class
@@ -62,6 +71,7 @@ namespace AppendMilitaryFeatures
 
                 inputFeatureClassString = args[0];
                 sidcFieldName = args[1];
+                standard = args[2];
 
                 // For testing: inputFeatureClassString = System.IO.Path.Combine(dataPath, @"geodatabases\test_outputs.gdb\FriendlyOperations\FriendlyUnits");
                 Console.WriteLine("*** Mode set to 'CalculateRepRules Only' ***");
@@ -72,6 +82,7 @@ namespace AppendMilitaryFeatures
                 inputFeatureClassString = args[0];
                 destinationGeodatabase = args[1];
                 sidcFieldName = args[2];
+                standard = args[3];
             }
 
             //ESRI License Initializer generated code.
@@ -80,13 +91,14 @@ namespace AppendMilitaryFeatures
             new esriLicenseExtensionCode[] { });
 
             Console.WriteLine("AppendMilitaryFeatures Parameters:");
+            Console.WriteLine("SymbologyStandard: " + standard);
             Console.WriteLine("InputFeatureClass(1): " + inputFeatureClassString);
 
             MilitaryFeatureAppender appender = new MilitaryFeatureAppender();
             if (CALCULATE_REP_RULES_ONLY)
             {
                 Console.WriteLine("SymbolIdField(2): " + sidcFieldName);
-                success = appender.CalculateRepRulesFromSidc(inputFeatureClassString, sidcFieldName);
+                success = appender.CalculateRepRulesFromSidc(inputFeatureClassString, sidcFieldName, standard);
             }
             else
             {
@@ -94,7 +106,8 @@ namespace AppendMilitaryFeatures
                 Console.WriteLine("SymbolIdField(3): " + sidcFieldName);
                 success = appender.Process(inputFeatureClassString,
                                  destinationGeodatabase,
-                                 sidcFieldName);
+                                 sidcFieldName, 
+                                 standard);
             }
             
             //ESRI License Initializer generated code.

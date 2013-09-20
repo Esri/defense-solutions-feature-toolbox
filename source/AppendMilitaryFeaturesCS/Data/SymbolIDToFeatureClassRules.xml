@@ -388,5 +388,41 @@
       <Expression><![CDATA[^[E].[O].{12}$]]></Expression>
     </MatchingExpressions>
   </MappingRule>
+  <MappingRule>
+    <Name>APP6 NA5CRO Items</Name>
+    <FeatureDataSet>NA5CRO</FeatureDataSet>
+    <FeatureClass>NA5CROItems</FeatureClass>
+    <GeometryType>Point</GeometryType>
+    <MatchingExpressions>
+      <Expression><![CDATA[^[G].[O].[I].{10}$]]></Expression>
+    </MatchingExpressions>
+  </MappingRule>
+  <MappingRule>
+    <Name>APP6 NA5CRO Locations</Name>
+    <FeatureDataSet>NA5CRO</FeatureDataSet>
+    <FeatureClass>NA5CROLocations</FeatureClass>
+    <GeometryType>Point</GeometryType>
+    <MatchingExpressions>
+      <Expression><![CDATA[^[G].[O].[L].{10}$]]></Expression>
+    </MatchingExpressions>
+  </MappingRule>
+  <MappingRule>
+    <Name>APP6 NA5CRO Operations</Name>
+    <FeatureDataSet>NA5CRO</FeatureDataSet>
+    <FeatureClass>NA5CROOperations</FeatureClass>
+    <GeometryType>Point</GeometryType>
+    <MatchingExpressions>
+      <Expression><![CDATA[^[G].[O].[P].{10}$]]></Expression>
+    </MatchingExpressions>
+  </MappingRule>
+  <MappingRule>
+    <Name>APP6 NA5CRO Violent Activities</Name>
+    <FeatureDataSet>NA5CRO</FeatureDataSet>
+    <FeatureClass>NA5CROViolentActivities</FeatureClass>
+    <GeometryType>Point</GeometryType>
+    <MatchingExpressions>
+      <Expression><![CDATA[^[G].[O].[V].{10}$]]></Expression>
+    </MatchingExpressions>
+  </MappingRule>
 </MappingRules>
 

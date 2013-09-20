@@ -12,35 +12,34 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #----------------------------------------------------------------------------------
-# ==================================================
 # CalculateRepRuleField.py
-# --------------------------------------------------
-# Version: ArcGIS Desktop 10.1
-# --------------------------------------------------
-# This PY file handles the GP input and validation for
-# the Append Military Features command line tool 
-# In this case/mode Append Military Features just sets the Representation Rule 
-# ==================================================
+# Description: This PY file handles the GP input and validation for
+#     the Append Military Features command line tool 
+#     In this case/mode Append Military Features just sets the Representation Rule
+# Requirements: ArcGIS Desktop Advanced (Advanced needed to change Representation Rules) 
+#----------------------------------------------------------------------------------
 
 # IMPORTS ==========================================
 import os, sys, traceback
 import subprocess
 import arcpy
 
-# SCRIPT ARGUMENTS =================================
-inputMilitaryFeature = arcpy.GetParameterAsText(0)
-sidcField = arcpy.GetParameterAsText(1)
-
-# CONSTANTS ========================================
-
-# LOCALS ===========================================
-debug = True # switch off if detailed info not needed
-
-# FUNCTIONS ========================================
-
 try:
+    # SCRIPT ARGUMENTS =================================
+    inputMilitaryFeature = arcpy.GetParameterAsText(0)
+    sidcField = arcpy.GetParameterAsText(1)
+    standard = arcpy.GetParameterAsText(2)
+        
+    # CONSTANTS ========================================
+    
+    # LOCALS ===========================================
+    debug = True # switch off if detailed info not needed
+    
+    # MAIN =============================================
+
     # set command line arguments - Note: need quotes("") around command line arguments (to handle spaces)
-    arguments = "\"" + str(inputMilitaryFeature) + "\"" + " \"" + sidcField + "\"" 
+    arguments = "\"" + str(inputMilitaryFeature) + "\"" + " \"" + sidcField + "\"" \
+        + " " + str(standard) 
     
     # set command string
     # AppendMilitaryFeatures.exe <inputFeatureClass> <outputGDB> [sicField]
@@ -82,7 +81,7 @@ try:
         arcpy.AddError(errorDictionary[retCode])
     
     # Set output
-    arcpy.SetParameter(2, inputMilitaryFeature)
+    arcpy.SetParameter(3, inputMilitaryFeature)
 
 except arcpy.ExecuteError: 
     # Get the tool error messages 

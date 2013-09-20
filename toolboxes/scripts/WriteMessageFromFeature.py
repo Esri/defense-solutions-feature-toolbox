@@ -29,12 +29,15 @@ import uuid
 ### Params:
 ### 0 - inputFC
 ### 1 - outputXMLFile
-### 2 - orderBy see: http://resources.arcgis.com/en/help/main/10.1/index.html#//018v00000050000000)
+### 2 - symbology standard (2525, APP6)
+### 3 - MessageType field
+### 4 - orderBy see: http://resources.arcgis.com/en/help/main/10.1/index.html#//018v00000050000000)
 ###     orderBy now called sort_fields (ex: sort_fields="STATE_NAME A; POP2000 D")
-### 3 - MessageFormat: ARCGIS_RUNTIME, ARCGIS_GEOMESSAGE
+### 5 - disable geometry transformation
 
 appendFile = False
 DEBUG_GEOMETRY_CONVERSION = False # switch to bypass geometry conversion to keep feature at original placement
+foundEmptySIDC = False  # used to detect if any rows are found without SIDC set
 
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # TODO / IMPORTANT : This flag may need to be set to false when using with Simulator Messages
@@ -46,8 +49,8 @@ FORCE_UNIQUE_IDs = True
 # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 def writeMessageFile() :
-
-    foundEmptySIDC = False  # used to detect if any row are found without SIDC set
+    
+    global DEBUG_GEOMETRY_CONVERSION, appendFile, foundEmptySIDC, FORCE_UNIQUE_IDs
 
     try :
         arcpy.AddMessage("Starting: Write/Append Message File")
@@ -66,17 +69,30 @@ def writeMessageFile() :
         # Get output filename
         outputFile = arcpy.GetParameterAsText(1)
         
-        # Sort Order 
-        orderBy = arcpy.GetParameterAsText(2)   
+        # Get standard
+        standard = arcpy.GetParameterAsText(2)
         
         # Message Type Field
-        messageTypeField = arcpy.GetParameterAsText(3)        
+        messageTypeField = arcpy.GetParameterAsText(3)   
+        
+        # Sort Order 
+        orderBy = arcpy.GetParameterAsText(4)       
+        
+        # Disable Geo Transformation and use default SIDC
+        disableGeoTransform = arcpy.GetParameterAsText(5)
+        if not ((disableGeoTransform == "") or (disableGeoTransform is None)) :
+            DEBUG_GEOMETRY_CONVERSION = (disableGeoTransform.upper() == "TRUE")       
 
         arcpy.AddMessage("Running with Parameters:")
         arcpy.AddMessage("0 - Input FC: " + str(inputFC))
         arcpy.AddMessage("1 - outputXMLFile: " + str(outputFile))
-        arcpy.AddMessage("2 - orderBy: " + orderBy)
+        arcpy.AddMessage("2 - symbology standard: " + str(standard))        
         arcpy.AddMessage("3 - MessageTypeField: " + messageTypeField)
+        arcpy.AddMessage("4 - orderBy: " + orderBy)
+        arcpy.AddMessage("5 - disableGeoTransform: " + disableGeoTransform)
+        
+        # initialize the standard
+        MilitaryUtilities.getGeometryConverterStandard(standard)
         
         if DEBUG_GEOMETRY_CONVERSION : 
             arcpy.AddWarning("Running in Debug Geo-Transformation Mode, symbol will use default/unknown SIDC for shape")

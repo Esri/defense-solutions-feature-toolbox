@@ -16,10 +16,8 @@
 # Description: Stand-alone unit test of SymbolDictionary class
 # -----------------------------------------------------------------------------
 
-import os
 import sys
 import traceback
-import TestUtilities
  
 symbolDictionary = None
 
@@ -86,6 +84,36 @@ def TestSicNameMapping() :
     
     if not ((name == expectedName) and (geoType == expectedGeoType)) :
         raise Exception('Test Failed') 
+    
+def TestSicNameMappingApp6() :     
+
+    if (symbolDictionary is None) :
+        raise Exception('Null SymbolDictionary')
+    
+    name2Check = "DIP Position F"
+    expectedSic = "GFCPOXSD-------"
+    
+    sic = symbolDictionary.SymbolNametoSymbolID(name2Check) 
+   
+    print "Name: " + name2Check + ", returned SIC: " + sic
+
+    if (sic <> expectedSic) :
+        raise Exception('Test Failed')     
+    
+def TestNameSicMappingApp6() :
+    
+    if (symbolDictionary is None) :
+        raise Exception('Null SymbolDictionary')
+    
+    name2Check = "Recruitment (coerced impressed)"
+    expectedSic = "GFOPPU---------"
+    
+    sic = symbolDictionary.SymbolNametoSymbolID(name2Check) 
+   
+    print "Name: " + name2Check + ", returned SIC: " + sic
+
+    if (sic <> expectedSic) :
+        raise Exception('Test Failed')                
        
 def CustomTest():
     if (symbolDictionary is None) :
@@ -93,8 +121,17 @@ def CustomTest():
     
     print "Put your own custom test / reproducer here"          
     
-def RunTests() :
+def RunTests2525() :
     
+    global symbolDictionary
+    
+    MilitaryUtilities.setSymbologyStandard("2525")
+    symbolDictionary = MilitaryUtilities.getSymbolDictionary()
+    
+    if symbolDictionary is None : 
+        print "Could not create SymbolDictionary"
+        raise Exception('Test Failed') 
+        
     # For testing a particular bug:
     # CustomTest()
     
@@ -103,6 +140,29 @@ def RunTests() :
     TestNameSicMappingExt()
     TestSimpleDictionaryGeometryException()
 
+def RunTestsAPP6() :
+    
+    global symbolDictionary
+    
+    MilitaryUtilities.symbolDictionary = None # reset this for test
+    
+    MilitaryUtilities.setSymbologyStandard("APP6")
+    symbolDictionary = MilitaryUtilities.getSymbolDictionary()
+    
+    if symbolDictionary is None : 
+        print "Could not create SymbolDictionary"
+        raise Exception('Test Failed') 
+    
+    if symbolDictionary.getSymbologyStandard() <> "APP6" : 
+        print "Could not create APP6 SymbolDictionary"
+        raise Exception('Test Failed')       
+        
+    # For testing a particular bug:
+    # CustomTest()
+    
+    TestSicNameMappingApp6()
+    TestNameSicMappingApp6()
+    
 try:
 
     print("Starting Test: TestSymbolDictionary")    
@@ -111,10 +171,9 @@ try:
     # assumes it is run from the current dir & exists at this relative location  
     sys.path.append('../../../toolboxes/scripts') 
     import MilitaryUtilities
-    
-    symbolDictionary = MilitaryUtilities.symbolDictionary
-    
-    RunTests()
+        
+    RunTests2525()
+    RunTestsAPP6()
             
     print "Test Successful"    
 

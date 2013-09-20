@@ -39,6 +39,8 @@ namespace TestSymbolCreator
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
+            string standard = "APP6"; // "2525";
+
             if (args.Length < 1)
             {
                 ///////////////////////////////////////////////////////////////////////////////////////
@@ -49,21 +51,24 @@ namespace TestSymbolCreator
                 ///////////////////////////////////////////////////////////////////////////////////////
 
                 // if no command line arguments, run as Form App
-                Application.Run(new Form1());
+                Application.Run(new Form1(standard));
             }
             else
             {
                 // if command line arguments, run as Consolse App
-                Console.WriteLine("Usage: TestSymbolCreator.exe <Symbol ID Code>");
+                Console.WriteLine("Usage: TestSymbolCreator.exe [Symbol ID Code] {[2525 | APP6]}");
 
                 string sic = args[0];
+
+                if (args.Length > 1)
+                    standard = args[1];
 
                 string exportFilename = sic + ".png";
                 exportFilename = exportFilename.Replace('*', '-'); // just in case some *'s in sic
 
                 const int size = 256;
 
-                SymbolExporter symbolExporter = new SymbolExporter();
+                SymbolExporter symbolExporter = new SymbolExporter(standard);
                 symbolExporter.CreateImageFileFromSic(sic, size, exportFilename);
             }
 

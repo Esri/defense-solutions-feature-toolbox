@@ -42,6 +42,7 @@ namespace AppendMilitaryFeatures
                 {4, "Output GDB does not exist/can't be opened"},
                 {5, "Exclusive Schema Lock could not be obtained on Output GDB"},
                 {6, "No [SIDC] field in input data"},
+                {7, "Could not find required Style Files. Check ArcGIS/Styles folder"},
                 {99, "Other/Unknown"}
             };
 
@@ -65,12 +66,13 @@ namespace AppendMilitaryFeatures
         /// <returns>Success: True/False</returns>
         public bool Process(string inputFeatureClassString,
                              string destinationGeodatabase,
-                             string sidcFieldName)
+                             string sidcFieldName,
+                             string standard)
         {
             bool success = false;
 
             string installPath = new System.IO.FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
-            string sidcToFeatureClassRulesDataFile = System.IO.Path.Combine(installPath, @"Data\SIDCToFeatureClassRules.xml");
+            string sidcToFeatureClassRulesDataFile = System.IO.Path.Combine(installPath, @"Data\SymbolIDToFeatureClassRules.xml");
 
             string fieldMappingDataFile = System.IO.Path.Combine(installPath, @"Data\FieldMapping.xml");
             InitializeFieldMapping(fieldMappingDataFile);
@@ -119,7 +121,14 @@ namespace AppendMilitaryFeatures
                 return false;
             }
 
-            symbolCreator = new SymbolCreator();
+            symbolCreator = new SymbolCreator(standard);
+            bool initialized = symbolCreator.Initialize();
+            if (!initialized)
+            {
+                lastErrorCode = 7; detailedErrorMessage = "Could not load required Style Files. Check ArcGIS/Styles folder.";
+                Console.WriteLine("Failed to initialize - could not load required Style Files");
+                return false;
+            }
 
             // where the main work is done of updating the output
             success = updateMatchedRules(matchedRules, inputFeatureClass, sidcFieldName);
@@ -132,13 +141,21 @@ namespace AppendMilitaryFeatures
         /// Military Feature destinationGeodatabase/featurelayer
         /// </summary>
         /// <returns>Success: True/False</returns>
-        public bool CalculateRepRulesFromSidc(string outputMilitaryFeatureClassString, string sidcFieldName)
+        public bool CalculateRepRulesFromSidc(string outputMilitaryFeatureClassString, string sidcFieldName, 
+            string standard)
         {
             bool success = false;
 
             MilitaryFeatureClassHelper.SIDC_FIELD_NAME2 = sidcFieldName;
 
-            symbolCreator = new SymbolCreator();
+            symbolCreator = new SymbolCreator(standard);
+            bool initialized = symbolCreator.Initialize();
+            if (!initialized)
+            {
+                lastErrorCode = 7; detailedErrorMessage = "Could not load required Style Files. Check ArcGIS/Styles folder.";
+                Console.WriteLine("Failed to initialize - could not load required Style Files");
+                return false;
+            }
 
             militaryFeatures = new MilitaryFeatureClassHelper();
             IFeatureClass outputFeatureClass = militaryFeatures.GetFeatureClassByName(outputMilitaryFeatureClassString);
@@ -363,9 +380,16 @@ namespace AppendMilitaryFeatures
 
                 matchingFeatureCount++;
 
-                Console.WriteLine("Processing Matching Feature: #:{0}, SIDC:{1}, Rule:{2}", matchingFeatureCount, sidc, rule);               
+                Console.WriteLine("Processing Matching Feature: #:{0}, SIDC:{1}, Rule:{2}", matchingFeatureCount, sidc, rule);
 
-                targetFeatureBuffer.Shape = currentFeature.Shape;
+                try
+                {
+                    targetFeatureBuffer.Shape = currentFeature.Shape;
+                }
+                catch (System.Runtime.InteropServices.COMException ce)
+                {
+                    Console.WriteLine("-->Could not copy geometry - you may need to add Z-values or run Fix Geometry Tool, error code=" + ce.ErrorCode);
+                }
 
                 processFieldMapping(currentFeature, targetFeatureBuffer);
 
@@ -699,7 +723,11 @@ namespace AppendMilitaryFeatures
                 return;
             }
 
-            symbolCreator.Initialize();
+            if (!symbolCreator.Initialized)
+            {
+                Console.WriteLine("SymbolCreator is not initialized - can't look up SIDCs/symbols");
+                return;
+            }
 
             int ruleIdIndex = targetFeatureBuffer.Fields.FindField(MilitaryFeatureClassHelper.RULE_FIELD_NAME1);
             if (ruleIdIndex < 0) // *2* different rule field names, need to check for both
@@ -774,6 +802,7 @@ namespace AppendMilitaryFeatures
 
         /// <summary>
         /// Check if a rep rule for the selected SymbolIDCode exists and if so returns it
+        /// Ignore Case in check for Rule Name (since Rep Rules ignore case)
         /// </summary>
         /// <returns>-1 if not found</returns>
         private int getRepRuleIdForSidc(IRepresentationClass repClass, string sidc)
@@ -783,7 +812,7 @@ namespace AppendMilitaryFeatures
             if ((symbolCreator == null) || (repClass == null))
                 return -1;
 
-            string symboName = symbolCreator.GetRuleNameFromSidc(sidc);
+            string symboName = symbolCreator.GetRuleNameFromSidc(sidc).ToUpper();
             if (string.IsNullOrEmpty(symboName))
             {
                 Console.WriteLine("Empty Name returned for SIDC: " + sidc);
@@ -801,7 +830,7 @@ namespace AppendMilitaryFeatures
             {
                 if (rule != null)
                 {
-                    string ruleName = repRules.get_Name(ruleID);
+                    string ruleName = repRules.get_Name(ruleID).ToUpper();
 
                     if (ruleName == symboName)
                     {

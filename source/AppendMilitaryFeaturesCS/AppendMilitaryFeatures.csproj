@@ -138,11 +138,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Data\SIDCToFeatureClassRules.xml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <SubType>Designer</SubType>
-    </Content>
     <Content Include="Data\FieldMapping.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Data\SymbolIDToFeatureClassRules.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -1,7 +1,8 @@
 
 # Defense Template specific ignores
 application/
-data/
+data/app6b
+data/mil2525c
 maps/
 scratch/
 arc.dir
@@ -13,6 +14,7 @@ arc.dir
 *-sav
 *-sav.*
 *Copy.*
+*-master
 
 #############
 ## Python

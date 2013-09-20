@@ -53,10 +53,11 @@ def RunTest():
         arcpy.CalculateField_management(inputRepRuleFC, repRuleField, '-1')
                  
         sidcField = "sic"
-             
+        standard = "2525"
+        
         ########################################################
         # Execute the Model under test:   
-        toolOutput = arcpy.CalculateRepresentationRuleField_MFT(inputRepRuleFC, sidcField)
+        toolOutput = arcpy.CalculateRepresentationRuleField_MFT(inputRepRuleFC, sidcField, standard)
         ########################################################
         
         # Verify the results

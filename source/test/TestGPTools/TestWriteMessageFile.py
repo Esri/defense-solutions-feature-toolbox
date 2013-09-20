@@ -50,14 +50,18 @@ def RunTest():
         arcpy.ImportToolbox(toolbox, "MFT")
         
         ########################################################
-        # Execute the Model(s) under test:                
+        # Execute the Model(s) under test:  
+        standard = "2525"              
         messageTypeField = "#"
         orderBy = "#"
+        disableGeoTransform = "#"
            
-        toolOutput = arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile, orderBy, messageTypeField)
+        toolOutput = arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile, standard, messageTypeField, orderBy, disableGeoTransform)
+        
+        disableGeoTransform = "True"
         
         # Also run the "Debug Format" tool (that maps everything to unknown , doesn't translate points)
-        arcpy.WriteMessageFileFromMilitaryFeaturesNoGeoTransform_MFT(inputPointsFC, outputMessageFileDebugFormat, orderBy, messageTypeField)
+        arcpy.WriteMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFileDebugFormat, standard, messageTypeField, orderBy, disableGeoTransform)
         ########################################################
                 
         # Verify the results        

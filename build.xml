@@ -12,7 +12,7 @@
   <property name="dir.datadir" value="./" />
 
   <target name="config" depends="get_data">
-    <echo message="Gets All Dependent Data used by this template from ArcGIS Online" />
+    <echo message="Gets All Dependent Data used by this template" />
   </target>
 
   <!-- Create necessary folder structure (Github will not create empty folders) -->
@@ -20,17 +20,38 @@
     <echo message="No need to makedirs, unzip makes entire data folder" />
   </target>
 
-  <!-- Get All Dependent Data from ArcGIS Online -->
+  <!-- Get All Dependent Data -->
   <target name="get_data">
-    <get src="http://www.arcgis.com/sharing/content/items/07721b26a7e4430c99379e879f17cf49/data"
-      dest="${dir.datadir}/military_feature_toolbox_data.zip" 
+
+   <!-- Get Dependent Data from ArcGIS Online -->
+   <get src="http://www.arcgis.com/sharing/content/items/3a18f91b34d14a5aa72aa67f32c97497/data"
+      dest="${dir.datadir}/military_feature_toolbox_testdata.zip" 
       verbose="true"
       usetimestamp="true"/>
 
-    <!-- Unzip Data Directories -->
-    <unzip src="${dir.datadir}/military_feature_toolbox_data.zip"
+    <!-- Unzip Data Directory -->
+
+    <unzip src="${dir.datadir}/military_feature_toolbox_testdata.zip"
          dest="${dir.datadir}">
     </unzip>
+
+   <!-- Get Dependent Data from Github Repo -->
+
+   <!-- We may need to add a check for the existing zip here, since the 
+        Date/Timestamp check doesn't seem to happen correctly for the Gtihub zips
+        (resulting in it getting downloaded each time) -->
+    <get src="https://github.com/Esri/military-features-data/archive/master.zip"
+      dest="${dir.datadir}/military-features-data-master.zip" 
+      verbose="true"
+      usetimestamp="true" />
+
+    <unzip src="${dir.datadir}/military-features-data-master.zip"
+         dest="${dir.datadir}">
+    </unzip>
+
+    <copy todir="${dir.datadir}/data" overwrite="true">
+      <fileset dir="${dir.datadir}/military-features-data-master/data"/>
+    </copy>
 
   </target>
 
@@ -38,10 +59,8 @@
   <!-- Normally only for testing from a clean configuration -->
   <target name="clean">
     <delete dir="${dir.datadir}/data" />
-    <delete dir="${dir.datadir}/maps" />
     <echo message="Warning: deleting data dirs (only do this if you mean it)" />
     <echo message="Deleting path: ${dir.datadir}/data" />
-    <echo message="Deleting path: ${dir.datadir}/maps" />
   </target>
 
   <target name="test">
