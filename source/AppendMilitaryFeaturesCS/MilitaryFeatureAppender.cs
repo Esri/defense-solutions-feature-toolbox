@@ -72,7 +72,7 @@ namespace AppendMilitaryFeatures
             bool success = false;
 
             string installPath = new System.IO.FileInfo(System.Reflection.Assembly.GetExecutingAssembly().Location).DirectoryName;
-            string sidcToFeatureClassRulesDataFile = System.IO.Path.Combine(installPath, @"Data\SIDCToFeatureClassRules.xml");
+            string sidcToFeatureClassRulesDataFile = System.IO.Path.Combine(installPath, @"Data\SymbolIDToFeatureClassRules.xml");
 
             string fieldMappingDataFile = System.IO.Path.Combine(installPath, @"Data\FieldMapping.xml");
             InitializeFieldMapping(fieldMappingDataFile);

@@ -11,6 +11,15 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
     * Tools for converting military features to ArcGIS Runtime messages (and visa-versa)
 	* Tools for setting the SIDC and representation rule fields on a military feature geodatabase
 
+## Sections
+
+* [Requirements](#requirements)
+* [Instructions](#instructions)
+* [Resources](#resources)
+* [Issues](#issues)
+* [Contributing](#contributing)
+* [Licensing](#licensing)
+
 ## Requirements
 
 * ArcGIS Desktop 10.1 (or later) with Advanced License
@@ -77,11 +86,11 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 
 ## Issues
 
-* Find a bug or want to request a new feature?  Please let us know by submitting an issue.
+Find a bug or want to request a new feature?  Please let us know by submitting an issue.
 
 ## Contributing
 
-* Anyone and everyone is welcome to contribute.
+Esri welcomes contributions from anyone and everyone. Please see our [guidelines for contributing](https://github.com/esri/contributing).
 
 ## Licensing
 

@@ -52,7 +52,7 @@ def RunTest():
                       
         ########################################################
         # Execute the Model under test:   
-        toolOutput = arcpy.CalcSIDCField_MFT(inputPointsFC, sidcField, standard, echelonField, affiliation)
+        toolOutput = arcpy.CalcSymbolIDField_MFT(inputPointsFC, sidcField, standard, echelonField, affiliation)
         ########################################################
         
         # Verify the results
