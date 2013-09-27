@@ -29,7 +29,8 @@ import traceback
 ### Params:
 ### 0 - inputXMLFileName
 ### 1 - outputFeatureClass
-### 2 - MessageFormat: ARCGIS_RUNTIME, ARCGIS_GEOMESSAGE
+### 2 - symbology standard (2525, APP6)
+### 3 - MessageType field
 
 def writeFeaturesFromMessageFile() :
 
@@ -37,7 +38,7 @@ def writeFeaturesFromMessageFile() :
 
     # Get the input message file
     inputFileName = arcpy.GetParameterAsText(0)
-    if (inputFileName is "" or inputFileName is None):
+    if (inputFileName == "") or (inputFileName is None):
         inputFileName = os.path.join(MilitaryUtilities.dataPath, r"/messages/Mil2525CMessages.xml")
                 
     if not os.path.isfile(inputFileName) :
@@ -51,7 +52,7 @@ def writeFeaturesFromMessageFile() :
         
     # Get the output feature class
     outputFC = arcpy.GetParameter(1)
-    if (outputFC is "" or outputFC is None):
+    if (outputFC == "") or (outputFC is None):
         outputFC = os.path.join(MilitaryUtilities.geoDatabasePath, r"/test_outputs.gdb/FriendlyOperations/FriendlyUnits")
         
     desc = arcpy.Describe(outputFC)
@@ -61,15 +62,19 @@ def writeFeaturesFromMessageFile() :
 
     shapeType = desc.shapeType;
 
-    # Input Message Format
-    messageTypeField = arcpy.GetParameterAsText(2)            
+    # Get standard
+    standard = arcpy.GetParameterAsText(2)
+        
+    # Message Type Field
+    messageTypeField = arcpy.GetParameterAsText(3)            
 
     arcpy.AddMessage("Running with Parameters:")
     arcpy.AddMessage("0 - input XML File: " + str(inputFileName))
     arcpy.AddMessage("1 - output FC: " + str(outputFC))
-    arcpy.AddMessage("2 - MessageTypeField: " + messageTypeField)
+    arcpy.AddMessage("2 - symbology standard: " + str(standard))        
+    arcpy.AddMessage("3 - MessageTypeField: " + messageTypeField)
         
-    if not ((messageTypeField is "") or (messageTypeField is None)) :
+    if not ((messageTypeField == "") or (messageTypeField is None)) :
         if desc.Fields.contains(field) :
             MilitaryUtilities.MessageTypeField = messageTypeField
         else :
@@ -79,6 +84,9 @@ def writeFeaturesFromMessageFile() :
     print "To Feature Class: " + str(outputFC)
     print "That match shape type: " + shapeType
 
+    # initialize the standard
+    MilitaryUtilities.getGeometryConverterStandard(standard)
+        
     ruleFieldName = MilitaryUtilities.symbolDictionary.initializeRulesByMilitaryFeatures(outputFC) 
 
     if (ruleFieldName == "") or (ruleFieldName is None) :

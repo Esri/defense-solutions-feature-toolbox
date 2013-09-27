@@ -1,4 +1,4 @@
-# military-feature-toolbox
+﻿# military-feature-toolbox
 
 The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
 
@@ -10,6 +10,15 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
     * Tools for importing/appending non-military feature classes into a military feature geodatabase
     * Tools for converting military features to ArcGIS Runtime messages (and visa-versa)
 	* Tools for setting the SIDC and representation rule fields on a military feature geodatabase
+
+## Sections
+
+* [Requirements](#requirements)
+* [Instructions](#instructions)
+* [Resources](#resources)
+* [Issues](#issues)
+* [Contributing](#contributing)
+* [Licensing](#licensing)
 
 ## Requirements
 
@@ -40,11 +49,15 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
         * `> ant`
         * Verify “Build Succeeded”  
         * This will create a directory military-feature-toolbox/data with required data files
-* Update the local ArcGIS Military Style Files to the latest version
-    * Navigate to the folder military-feature-toolbox\data\stylefiles
-    * Update/copy all of the .style files from this folder into your ArcGIS Desktop Style folder (Overwrite if necessary)
+* IMPORTANT: Update the local ArcGIS Military Style Files to the latest versions from the [military-features-data repository](https://raw.github.com/Esri/military-features-data)
+    * This data is automatically downloaded by the ant script above, but you must manually copy the files to the ArcGIS styles folder
+    * To accomplish this:
+    * Navigate to the folders
+        *  military-features-data\data\mil2525c\stylefiles
+        *  military-features-data\data\app6b\stylefiles
+    * Update/copy all of the .style files from each folder into your ArcGIS Desktop Style folder (overwrite if necessary)
     * For example, copy the style files from above location into this Desktop Folder:
-    	* {ArcGIS Install Location}\ArcGIS\Desktop10.1\Styles
+    	* {ArcGIS Install Location}\ArcGIS\Desktop10.X\Styles
 * Open and build the Visual Studio Solution at military-feature-toolbox\source\AppendMilitaryFeaturesCS
     * To use MSBuild to build the solution
         * Open a Visual Studio Command Prompt: Start Menu | Microsoft Visual Studio 2010/2012 | Visual Studio Tools | Developer Command Prompt for VS 2010/2012
@@ -73,11 +86,11 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 
 ## Issues
 
-* Find a bug or want to request a new feature?  Please let us know by submitting an issue.
+Find a bug or want to request a new feature?  Please let us know by submitting an issue.
 
 ## Contributing
 
-* Anyone and everyone is welcome to contribute.
+Esri welcomes contributions from anyone and everyone. Please see our [guidelines for contributing](https://github.com/esri/contributing).
 
 ## Licensing
 

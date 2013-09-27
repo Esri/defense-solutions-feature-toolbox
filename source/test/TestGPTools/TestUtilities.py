@@ -20,8 +20,8 @@
 import os
 
 currentPath = os.path.dirname(__file__)
-dataPath = os.path.normpath(os.path.join(currentPath, r"../../../data/"))
-geodatabasePath = os.path.normpath(os.path.join(currentPath, r"../../../data/geodatabases/"))
+dataPath = os.path.normpath(os.path.join(currentPath, r"../../../data/mil2525c/testdata/"))
+geodatabasePath = os.path.normpath(os.path.join(dataPath, r"geodatabases/"))
 toolboxesPath = os.path.normpath(os.path.join(currentPath, r"../../../toolboxes/"))
 
 blankMilFeaturesGDB = os.path.join(geodatabasePath, "MilitaryOverlay10.1.1-Blank.gdb")                

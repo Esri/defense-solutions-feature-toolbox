@@ -24,8 +24,11 @@ namespace AppendMilitaryFeatures
 {
     public class SymbolCreator
     {
-        public SymbolCreator()
+        /// <summary>Constructor</summary>
+        /// <param name="standardType">"2525" or "APP6"</param>
+        public SymbolCreator(string symbologyStandardName)
         {
+            symbologyStandard = symbologyStandardName;
         }
 
         public bool Initialized
@@ -34,22 +37,59 @@ namespace AppendMilitaryFeatures
         }
         bool initialized = false;
 
-        private Random r = new Random();
+        /// <summary>
+        /// The Initialize method will load the style files and lookup tables
+        /// </summary>
+        /// <param name="standardType">"2525" or "APP6"</param>
+        public bool Initialize()
+        {
+            if (!initialized)
+            {
+                initialized = LoadStyleFiles();
+            }
+
+            return initialized;
+        }
+
+        public string SymbologyStandard
+        {
+            get { return symbologyStandard; }
+        }
+        private string symbologyStandard = "2525";
+
+        private List<string> styleFiles2525 = new List<string>() {
+            "C2 Military Operations.style", 
+            "C2 UEI Air Track.style", 
+            "C2 UEI Ground Track Equipment.style",
+            "C2 UEI Ground Track Installations.style", 
+            "C2 UEI Ground Track Units.style", 
+            "C2 UEI Sea Surface Track.style",
+            "C2 UEI Space Track.style",
+            "C2 UEI Special Operations Track.style",
+            "C2 UEI Subsurface Track.style",
+            "Military Emergency Management.style",
+            "Military METOC.style",
+            "Signals Intelligence.style",
+            "Stability Operations.style" };
+
+        private List<string> styleFilesApp6 = new List<string>() {
+            "APP6 Air Track.style", 
+            "APP6 Ground Track Equipment.style",
+            "APP6 Ground Track Installations.style",
+            "APP6 Ground Track Units.style",
+            "APP6 Military NA5CRO.style",
+            "APP6 Military Operations.style",
+            "APP6 Sea Surface Track.style",
+            "APP6 Space Track.style",
+            "APP6 Special Operations.style",
+            "APP6 Subsurface Track.style",
+            "APP6 Weather.style" };
+
         public string GetRandomSIC()
         {
             return SIC2SymbolNameDictionary.ElementAt(r.Next(SIC2SymbolNameDictionary.Keys.Count - 1)).Key;
         }
-
-        /// <summary>
-        /// The Initialize method will load the style files and lookup tables
-        /// </summary>
-        public void Initialize()
-        {
-           if (!initialized)
-                LoadStyleFiles();
-
-           initialized = true;
-        }
+        private Random r = new Random();
 
         public string GetRuleNameFromSidc(string sic)
         {
@@ -634,7 +674,12 @@ namespace AppendMilitaryFeatures
         {
             string genericName = GetGenericSymbolName(sic);
 
-            return GetMarkerSymbolByName(genericName);
+            IMarkerSymbol ms = GetMarkerSymbolByName(genericName);
+
+            if (ms == null)
+                LogError("Could not create Marker for " + sic + ", " + genericName);
+
+            return ms;
         }
 
         /// <summary>
@@ -719,8 +764,8 @@ namespace AppendMilitaryFeatures
                 StringBuilder sb;
                 if (codingScheme == 'G')
                 {
-                    // Style file Tactical Graphics have multiple conventions: 1:"G-XX", 2:"G<Afilliation>XX", 3:"GFXX"
-                    // must check for all 3
+                    // Style file Tactical Graphics have multiple conventions: 
+                    // 1:"G-XX", 2:"G<Afilliation>XX", 3:"G*-", 4:"GFXX"
 
                     // 1: "-" for affiliation
                     sb = new StringBuilder(GetMaskedTGSIC(symbolId));
@@ -729,7 +774,11 @@ namespace AppendMilitaryFeatures
                     if (!SIC2SymbolNameDictionary.ContainsKey(sb.ToString()))
                         sb[1] = symbolId[1];
 
-                    // 3: use "F" affilitation (some markers only have "F" version)
+                    // 3: end with "-" instead of "X"
+                    if (!SIC2SymbolNameDictionary.ContainsKey(sb.ToString()))
+                        sb[14] = '-';
+
+                    // 4: use "F" affilitation (some markers only have "F" version)
                     if (!SIC2SymbolNameDictionary.ContainsKey(sb.ToString()))
                         sb[1] = 'F';
                 }
@@ -878,7 +927,8 @@ namespace AppendMilitaryFeatures
 
         #region Symbol ID code validation methods
 
-        private const string ValidSicExpression = @"^[SGWIOE][PUAFNSHGWMDLJKO\-][PAGSUFXTMOEVLIRNZ\-][APCDXF\-][A-Z0-9\-]{6}[A-Z\-]{2}[A-Z0-9\-]{2}[AECGNSX\-]$";
+//        private const string ValidSicExpression = @"^[SGWIOE][PUAFNSHGWMDLJKO\-][PAGSUFXTMOEVLIRNZ\-][APCDXF\-][A-Z0-9\-]{6}[A-Z\-]{2}[A-Z0-9\-]{2}[AECGNSX\-]$";
+        private const string ValidSicExpression = @"^[SGWIOE][PUAFNSHGWMDLJKO\-][PAGSUFXTMOEVLIRNZC\-][APCDXF\-][A-Z0-9\-]{6}[A-Z\-]{2}[A-Z0-9\-]{2}[AECGNSX\-]$";
 
         // simple SIC checker
         public bool IsValidSic(string sicString)
@@ -1229,14 +1279,15 @@ namespace AppendMilitaryFeatures
 
         private void ProcessStyleGalleryItems(IStyleGallery styleGallery, string styleClass)
         {
-            if (styleGallery == null)
+            if ((styleGallery == null) || string.IsNullOrEmpty(styleClass))
             {
                 Console.WriteLine("ERROR: Style Gallery NULL");
                 return;
             }
 
-            IEnumStyleGalleryItem ge = styleGallery.get_Items(styleClass, "", "");
+            System.Diagnostics.Trace.WriteLine("ProcessStyleGalleryItems for class: " + styleClass);
 
+            IEnumStyleGalleryItem ge = styleGallery.get_Items(styleClass, "", "");
             if (ge == null)
             {
                 Console.WriteLine("ERROR: No Items for Style Class:" + styleClass);
@@ -1251,10 +1302,6 @@ namespace AppendMilitaryFeatures
                 {
                     if (!ID2StyleGalleryItemDictionary.ContainsKey(item.Name))
                     {
-                        // TODO: App6, but SKIP APP6's for now
-                        if (item.Name.Contains("APP6"))
-                            continue;
-
                         IStyleGalleryItem2 item2 = item as IStyleGalleryItem2;
                         if (item2 != null)
                         {
@@ -1266,20 +1313,33 @@ namespace AppendMilitaryFeatures
 
                             // IMPORTANT: assumes SIC is always first in reversed list (last in original list)
                             string lastTag = tagListReversed.ElementAt(0);
-                            string sidc = lastTag.ToUpper().Trim().Replace('*', '-');
+                            string sidcTag = lastTag.ToUpper().Trim();
+
+                            // WORKAROUND: for for some erroneous cases:
+                            string sidcNoStars = sidcTag.Replace('*', '-');
+
+                            if ((!IsValidSic(sidcNoStars)) && (sidcNoStars.Length > 10))
+                                LogDebug(String.Format("***Style Item SIDC: {0} does not appear to be a valid, length = {1}", sidcNoStars, sidcNoStars.Length));
+
+                            string sidcNoSpaces = sidcNoStars.Replace(" ", "");
+                            if (sidcNoSpaces.Length > 15)
+                                sidcNoSpaces = sidcNoSpaces.Remove(15);
+                            // END WORKAROUND
+
+                            string sidc = sidcNoSpaces;
 
                             if (string.IsNullOrEmpty(sidc))
                             {
                                 // It has an empty SIC (Some of the entries have blank SICs)
-                                // LogError(String.Format("*** Failed to add a valid SIC, {0}, {1}, {2}, {3}, {4}", sidc.Length, sidc, IsValidSic(sidc) ? "valid" : "INVALID", SIC2SymbolNameDictionary.ContainsKey(sidc) ? "DUPLICATE" : "New", item.Name));
+                                LogDebug(String.Format("No SIDC found for Item Name: {0}", item.Name));
                             }
                             else
                             {
                                 if (!SIC2SymbolNameDictionary.ContainsKey(sidc))
                                 {
                                     string itemName = item.Name;
-                                    // if (styleClass.StartsWith("Rep"))
-                                    if ((sidc[0] == 'G') || (sidc[0] == 'W'))
+                                    if ((styleClass.StartsWith("Rep")) && 
+                                        ((sidc[0] == 'G') || (sidc[0] == 'W')))
                                     {
                                         int len = itemName.Length;
                                         if ((len > 2) && (itemName.EndsWith("F") 
@@ -1291,11 +1351,22 @@ namespace AppendMilitaryFeatures
                                     count++;
 
                                     // If debug output needed during StyleFile read:
-                                    // System.Diagnostics.Trace.WriteLine("#" + count + ", Item Name: " + itemName + ", SIDC: " + sidc);
+                                    // LogDebug("#" + count + ", Item Name: " + itemName + ", SIDC: " + sidc);
 
                                     if (!ID2StyleGalleryItemDictionary.ContainsKey(itemName))
                                         ID2StyleGalleryItemDictionary.Add(itemName, item);
-                                    SIC2SymbolNameDictionary.Add(sidc, itemName);
+                                    else
+                                        if (!styleClass.StartsWith("Rep")) // multiple items are expected for rep rules
+                                            LogDebug(String.Format("*** Failed to add a SIC to ID2StyleGalleryItemDictionary: {0}, {1}, {2}, {3}", 
+                                                item.Name, sidc, sidc.Length, IsValidSic(sidc) ? "Valid" : "INVALID"));
+
+                                    if (!SIC2SymbolNameDictionary.ContainsKey(sidc))
+                                    {
+                                        SIC2SymbolNameDictionary.Add(sidc, itemName);
+                                    }
+                                    else
+                                        LogDebug(String.Format("*** Failed to add a SIC to SIC2SymbolNameDictionary: {0}, {1}, {2}, {3}",
+                                            item.Name, sidc, sidc.Length, IsValidSic(sidc) ? "Valid" : "INVALID"));
                                 }
                             }
                         }
@@ -1316,8 +1387,10 @@ namespace AppendMilitaryFeatures
         /// <summary>
         /// This method loads the configured style files
         /// </summary>
-        private void LoadStyleFiles()
+        private bool LoadStyleFiles()
         {
+            bool success = true;
+
             IStyleGallery styleGallery = new StyleGalleryClass();
             IStyleGalleryStorage styleGalleryStorage = styleGallery as IStyleGalleryStorage;
 
@@ -1325,16 +1398,17 @@ namespace AppendMilitaryFeatures
             {
                 if (styleGalleryStorage != null)
                 {
-                    //Console.WriteLine(String.Format("Default folder : {0}, File Count : {1}", StyleGalleryStorage.DefaultStylePath, StyleGalleryStorage.FileCount));
+                    // Debug Info, if needed:
+                    // Console.WriteLine(String.Format("Default folder : {0}, File Count : {1}", StyleGalleryStorage.DefaultStylePath, StyleGalleryStorage.FileCount));
+                    // Console.WriteLine(String.Format("Class Count : {0}", StyleGallery.ClassCount));
 
-                    //Console.WriteLine(String.Format("Class Count : {0}", StyleGallery.ClassCount));
+                    // First remove current Styles
                     int fileCount = styleGalleryStorage.FileCount;
                     List<string> files = new List<string>();
                     for (int i = 0; i < fileCount; i++)
                     {
                         string file = styleGalleryStorage.get_File(i);
                         files.Add(file);
-                        //Console.WriteLine("Adding file: " + file);
                     }
 
                     foreach (string path in files)
@@ -1342,25 +1416,30 @@ namespace AppendMilitaryFeatures
                         styleGalleryStorage.RemoveFile(path);
                     }
 
-                    // WORKAROUND: looks like doing all styles at once causing issues so doing them one at a time
-                    List<string> styleFiles = new List<string>() {"C2 Military Operations.style", "C2 UEI Air Track.style", "C2 UEI Ground Track Equipment.style",
-                    "C2 UEI Ground Track Installations.style", "C2 UEI Ground Track Units.style", "C2 UEI Sea Surface Track.style","C2 UEI Space Track.style",
-                    "C2 UEI Special Operations Track.style","C2 UEI Subsurface Track.style","Military Emergency Management.style","Military METOC.style",
-                    "Signals Intelligence.style","Stability Operations.style"};
+                    List<string> styleFiles = styleFiles2525;
 
-                    // Simple Test (for quicker loading)
-                    // List<string> styleFiles = new List<string>() {"C2 UEI Ground Track Units.style"};
+                    if (symbologyStandard.ToUpper().Contains("APP6"))
+                        styleFiles = styleFilesApp6;
 
+                    // WORKAROUND: loading all styles at once causing issues so doing them one at a time
                     foreach (string styleFile in styleFiles)
                     {
                         string stylepath = styleGalleryStorage.DefaultStylePath + styleFile;
+
+                        if (!System.IO.File.Exists(stylepath))
+                        {
+                            // Check files exists and issue warning and bails if not
+                            success = false;
+                            LogError("Could not find required Style: " + stylepath);
+                            break;
+                        }
+
                         // ex: string stylepath = @"C:\Program Files (x86)\ArcGIS\Desktop10.1\Styles\" + styleFile;
                         styleGalleryStorage.AddFile(stylepath);
 
-                        System.Diagnostics.Trace.WriteLine("Style" + styleFile);
+                        System.Diagnostics.Trace.WriteLine("Style: " + styleFile);
 
                         // IMPORTANT: Note: preloading all the gallery items for faster lookup
-
                         try
                         {
                             ProcessStyleGalleryItems(styleGallery, "Marker Symbols");
@@ -1368,7 +1447,7 @@ namespace AppendMilitaryFeatures
                         }
                         catch (Exception ex)
                         {
-                            Console.WriteLine(ex);
+                            LogError("Exception: " + ex);
                         }
 
                         styleGalleryStorage.RemoveFile(stylepath);
@@ -1377,7 +1456,7 @@ namespace AppendMilitaryFeatures
             }
             catch (Exception ex2)
             {
-                Console.WriteLine(ex2);
+                LogError("Exception: " + ex2);
             }
 
             // release objects
@@ -1392,11 +1471,19 @@ namespace AppendMilitaryFeatures
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
+
+            return success;
         }
 
-        private void LogError(string msg)
+        private static void LogDebug(string msg)
+        {
+            System.Diagnostics.Debug.WriteLine(msg);
+        }
+
+        private static void LogError(string msg)
         {
             Console.WriteLine(msg);
+            System.Diagnostics.Trace.WriteLine(msg);
 
             // Log to file:
             //using (TextWriter w = File.AppendText("AppendMilitaryFeaturesLog.txt"))

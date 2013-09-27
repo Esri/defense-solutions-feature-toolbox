@@ -51,10 +51,11 @@ def RunTest():
         arcpy.env.overwriteOutput = True
         arcpy.ImportToolbox(toolbox, "MFT")
         
+        standard = "2525"
+        
         ########################################################
-        # Execute the Model under test:   
-        # Test 1:                     
-        toolOutput = arcpy.AppendMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile)
+        # Execute the Model under test:                      
+        toolOutput = arcpy.AppendMessageFileFromMilitaryFeatures_MFT(inputPointsFC, outputMessageFile, standard)
         ########################################################
                         
         # Verify the results

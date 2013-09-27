@@ -99,7 +99,8 @@ try:
     sys.path.append('../../../toolboxes/scripts') 
     import MilitaryUtilities
     
-    geometryConverter = MilitaryUtilities.geoConverter
+    standard = "2525"
+    geometryConverter = MilitaryUtilities.getGeometryConverterStandard(standard)
     
     RunTests()
             

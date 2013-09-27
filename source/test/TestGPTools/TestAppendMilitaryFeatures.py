@@ -57,10 +57,11 @@ def RunTest():
                         
         outputWorkspace = TestUtilities.outputGDBTemp
         symbolIdField = "Symbol_ID"
+        standard = "2525"
         
         ########################################################
         # Execute the Model under test:           
-        toolOutput = arcpy.AppendMilitaryFeatures_MFT(inputPointsFC, outputWorkspace, symbolIdField)
+        toolOutput = arcpy.AppendMilitaryFeatures_MFT(inputPointsFC, outputWorkspace, symbolIdField, standard)
         ########################################################
 
         # Verify the results
