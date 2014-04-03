@@ -368,8 +368,16 @@ def writeMessageFile() :
                     rowVal = None
                     
                 if rowVal is not None:
-                    fieldValAsString = str(row.getValue(field))
-                    messageFile.write("\t\t<"+field+">" + fieldValAsString + "</" + field + ">\n")
+                    try:
+						fieldValAsString = str(row.getValue(field))
+						messageFile.write("\t\t<"+field+">" + fieldValAsString + "</" + field + ">\n")
+                    except:
+                        #fixed issue #19
+						fieldValAsString = row.getValue(field)
+						decodedstring = fieldValAsString.encode('ascii', 'ignore')
+						arcpy.AddMessage("trying to fix unicode problem, changing " + fieldValAsString + " -> " + decodedstring)
+						messageFile.write("\t\t<"+field+">" + decodedstring + "</" + field + ">\n")
+						
             ###################Common Fields/Attributes#####################
 
             # Ex: messageFile.write("\t</geomessage>\n")
