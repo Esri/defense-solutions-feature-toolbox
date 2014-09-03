@@ -111,5 +111,5 @@ limitations under the License.
 A copy of the license is available in the repository's
 [license.txt](license.txt) file.
 
-[](Esri Tags: ArcGIS Defense and Intelligence Military Feature Military Features)
+[](Esri Tags: ArcGIS Defense and Intelligence Military Feature Military Features ArcGISSolutions)
 [](Esri Language: Python)
