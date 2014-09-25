@@ -97,7 +97,8 @@ GCT_UORTSHAPE           	= "GCT_UOrTShape"
 # Exclude these fields from copy/updates
 MILFEATURES_FIELD_EXCLUDE_LIST = ["shape", "Shape", "SHAPE", "objectid", "sort", "OBJECTID",\
     "messagetype", "sidc", "createdby", "editedby", "createdtime", "editedtime", "override",\
-    "shape_Length", "shape_Area", "ruleid", "symbolrule"]
+    "shape_Length", "shape_Area", "SHAPE_Length", "SHAPE_Area",\
+    "ruleid", "symbolrule"]
 
 def getGeometryStringFromShapeType(shapeType) :
     if shapeType == "Point" : 
