@@ -290,6 +290,11 @@ def writeMessageFile() :
                     foundEmptySIDC = True
                     msg =  "SIDC is not set, using default: " + SymbolIdCodeVal
                     arcpy.AddWarning(msg)
+            # TODO: we may need to add an option to Disable the geometry conversion
+            # *but* not to change the SIDC to the default one, if you don't want the SIDC to change
+            # when "Disable Geometry Conversion" is checked, comment/uncomment thses lines to
+            # set this to false/disable this behavior:
+            # elif False :
             elif DEBUG_GEOMETRY_CONVERSION :
                 print "Using Debug SIDC"
                 conversionNotes = "Original SIDC: " + SymbolIdCodeVal
@@ -367,7 +372,7 @@ def writeMessageFile() :
                     print "Could not get row val for field" + field
                     rowVal = None
                     
-                if rowVal is not None:
+                if (rowVal is not None) and (rowVal != '') :
                     try:
 						fieldValAsString = str(row.getValue(field))
 						messageFile.write("\t\t<"+field+">" + fieldValAsString + "</" + field + ">\n")
