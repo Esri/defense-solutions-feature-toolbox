@@ -1,6 +1,6 @@
-﻿# military-feature-toolbox
+# military-feature-toolbox
 
-The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
+The ArcGIS for the Military - Military Feature Toolbox is a set of tools, scripts, and applications for use in ArcGIS Desktop. These tools provide specialized processing and workflows for military feature symbology.
 
 ![Image of Military Feature Toolbox]( ScreenShot.JPG "military-feature-toolbox" )
 
@@ -22,7 +22,7 @@ The ArcGIS Defense and Intelligence Military Feature Toolbox is a set of tools, 
 
 ## Requirements
 
-* ArcGIS Desktop 10.1 (or later) with Advanced License
+* ArcGIS 10.1 for Desktop (or later) with Advanced License
     *  ArcGIS Desktop Advanced License is required to change Representation Rules (e.g. in Append Military Features Tool)
 * Apache Ant - used to download and extract dependent data and run test drivers
 * To build the .NET Solution source in source\AppendMilitaryFeaturesCS you will also need
