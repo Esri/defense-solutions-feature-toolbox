@@ -214,6 +214,69 @@ class SymbolIdCodeDelta(object) :
 
 class SymbolLookup(object) :
 
+	affiliation_charlie_2_delta_char = dict([ \
+                ('P', '0'), \
+                ('U', '1'), \
+                ('A', '2'), \
+                ('F', '3'), \
+                ('N', '4'), \
+                ('S', '5'), \
+                ('H', '6'), \
+                ])
+
+	hq_tf_fd_charlie_2_delta_char = dict([ \
+                ('-', '0'), \
+                ('F', '1'), \
+                ('A', '2'), \
+                ('C', '3'), \
+                ('E', '4'), \
+                ('G', '5'), \
+                ('B', '6'), \
+                ('D', '7'), \
+                ])
+
+	status_charlie_2_delta_char = dict([ \
+                ('P', '0'), \
+                ('A', '1'), \
+                ('C', '2'), \
+                ('D', '3'), \
+                ('X', '4'), \
+                ('F', '5'), \
+                ])
+
+	echelon_mobility_charlie_2_delta_char = dict([ \
+                ('-', '00'), \
+                ('A', '11'), \
+                ('B', '12'), \
+                ('C', '13'), \
+                ('D', '14'), \
+                ('E', '15'), \
+                ('F', '16'), \
+                ('G', '17'), \
+                ('H', '18'), \
+
+                ('I', '21'), \
+                ('J', '22'), \
+                ('K', '23'), \
+                ('L', '24'), \
+                ('M', '25'), \
+                ('M', '26'), \
+
+                ('O', '31'), \
+                ('P', '32'), \
+                ('Q', '33'), \
+                ('R', '34'), \
+                ('S', '35'), \
+                ('T', '36'), \
+                ('W', '37'), \
+
+                ('U', '41'), \
+                ('V', '42'), \
+
+                ('X', '51'), \
+                ('Y', '52'), \
+                ])
+
 	def __init__(self) :
 
 		self.idDict2525CtoD = {}
@@ -259,14 +322,16 @@ class SymbolLookup(object) :
 	#	print(key)
 	
 
-	def getDeltaCodeFromCharlie(self, charlieCode) : 
+	def getDeltaCodeFromCharlie(self, charlieCodeIn) : 
 
 		symbolId = SymbolIdCodeDelta()
 
-		MINIMUM_CODE_LENGTH = 10
+		MINIMUM_CODE_LENGTH = 15
 
-		if (not self.initialized()) or (charlieCode is None) or (len(charlieCode) < MINIMUM_CODE_LENGTH) :
+		if (not self.initialized()) or (charlieCodeIn is None) or (len(charlieCodeIn) < MINIMUM_CODE_LENGTH) :
 			return symbolId 
+
+		charlieCode = charlieCodeIn.upper()
 
 		symbolSetString = '98'
 		entityString    = '100000'
@@ -320,6 +385,22 @@ class SymbolLookup(object) :
 		symbolId.modifier2   = mod2String
 
 		# now we have the base symbol, but the remaining attributes are a little messier to map 
-		# TODO: Affiliation, Planning/Status, HQ_TF_FD, Echelon
+		affilChar = charlieCode[1]
+		if affilChar in SymbolLookup.affiliation_charlie_2_delta_char :
+			symbolId.affiliation = SymbolLookup.affiliation_charlie_2_delta_char[affilChar]
+
+		statusChar = charlieCode[3]
+		if statusChar in SymbolLookup.status_charlie_2_delta_char :
+			symbolId.status = SymbolLookup.status_charlie_2_delta_char[statusChar]
+		
+		hqFdTfChar = charlieCode[10]
+		if hqFdTfChar in SymbolLookup.hq_tf_fd_charlie_2_delta_char :
+			symbolId.hq_tf_fd = SymbolLookup.hq_tf_fd_charlie_2_delta_char[hqFdTfChar]
+
+		echelonChar = charlieCode[11]
+		if echelonChar in SymbolLookup.echelon_mobility_charlie_2_delta_char :
+			symbolId.echelon_mobility = SymbolLookup.echelon_mobility_charlie_2_delta_char[echelonChar]
+
+		
 
 		return symbolId 
