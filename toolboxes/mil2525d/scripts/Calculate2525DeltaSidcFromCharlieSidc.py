@@ -30,9 +30,11 @@ import SymbolUtilities
 ### 0 - input_feature_class (FeatureClass) - input Military Feature Class
 ### 1 - sidc_field_2525_C(Charlie) (String) - field to read 2525 C(Charlie) SIDC value
 ### 2 - sidc_field_2525_D(Delta) (String) - field to store 2525 D(Delta) SIDC value
-### 3 - conversion remarks (optional) - reason code could not be converted if applicable
+### 3 - conversion_remarks_field (optional) - reason code could not be converted if applicable
 ###
 def calculate2525DeltaSidcFromCharlieSidc() :
+
+	feature, features = None, None
 
 	try :
 		arcpy.AddMessage('Starting: Calculate2525DeltaSidcFromCharlieSidc')
@@ -66,25 +68,38 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 		sidcFieldDelta = arcpy.GetParameterAsText(2)
 
 		if (sidcFieldDelta == '') or (sidcFieldDelta is None):
-			sidcFieldDelta = 'SIDC2525Delta'
+			sidcFieldDelta = 'sidc'
 
 		# 3 : conversion remarks (optional)
-		conversionRemarks = arcpy.GetParameterAsText(3)
+		conversionRemarksField = arcpy.GetParameterAsText(3)
+
+		if (conversionRemarksField == '') or (conversionRemarksField is None):
+			# TODO: for debug, remove for production
+			conversionRemarksField = 'staffcomment'
+			# conversionRemarksField = None		
 		
 		arcpy.AddMessage('Running with Parameters:')
 		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))
 		arcpy.AddMessage('1 - SIDC Field (Charlie): ' + sidcFieldCharlie)
 		arcpy.AddMessage('2 - SIDC Field (Delta): ' + sidcFieldDelta)
+		if not conversionRemarksField is None : 
+			arcpy.AddMessage('3 - Conversion Remarks Field: ' + conversionRemarksField)
 
-		# Get a list of available feature class fields (we use this in a few places)
+		# the list of fields we want to check exist & are of the correct type
+		fieldNameToCheckList = [sidcFieldCharlie, sidcFieldDelta]
+		if not conversionRemarksField is None:
+			fieldNameToCheckList.append(conversionRemarksField)
+
+		# the list of actual feature class fields found
 		fieldNameList = []
 
 		# Check for Text/String field type
 		for field in desc.Fields:
-			if field.name == sidcFieldCharlie or field.name == sidcFieldDelta :
-				fieldNameList.append(field.name) # we only need these 2 fields
+			if field.name in fieldNameToCheckList:
+				fieldNameList.append(field.name) # we only need these fields
 				if field.type != 'String' : 
-					arcpy.AddError('SIDC Field: ' + field.name + ' is not of type string/text, type: ' + \
+					arcpy.AddError('SIDC Field: ' + field.name + \
+						' is not of type string/text, type: ' + \
 						field.type)
 					return
 
@@ -97,13 +112,16 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 			arcpy.AddError('Could not find field: ' + sidcFieldDelta)
 			return
 
+		if not (conversionRemarksField is None) and not (conversionRemarksField in fieldNameList) : 
+			arcpy.AddWarning('Could not find field: ' + conversionRemarksField)
+			conversionRemarksField = None
+
 		symbolLookup = SymbolUtilities.SymbolLookup()
 
 		if not symbolLookup.initialized() : 
 			arcpy.AddError('Could not load dependent data files from tooldata')
 
 		# Open an update cursor (if possible)
-		features = None
 		try :            
 			fieldNameListAsString = ','.join(fieldNameList) # Change into format expected by UpdateCursor
 			features = arcpy.gp.UpdateCursor(inputFC, '', None, fieldNameListAsString) 
@@ -133,10 +151,14 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 					print("Could not convert 2525Charlie SIDC: " + mil2525CharlieSidc)
 					continue
 				
-				symbolIdCodeDelta = symbolId.human_readable_code()
+				symbolIdCodeDelta = symbolId.full_code # .human_readable_code
+				conversionRemarks = symbolId.remarks
 
 				try : 
 					feature.setValue(sidcFieldDelta, symbolIdCodeDelta)
+
+					if not (conversionRemarksField is None or conversionRemarks is None) :
+						feature.setValue(conversionRemarksField, conversionRemarks)
 
 					features.updateRow(feature)
 				except :

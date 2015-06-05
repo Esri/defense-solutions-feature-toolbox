@@ -19,10 +19,15 @@
 
 import csv
 import os
+import sys
 
 class SymbolIdCodeDelta(object) :
 
+	INVALID_FULL_CODE = 'INVALID'
+	NOT_SET = 'NOT SET'
+
 	def __init__(self) :
+
 		self.version           = '10'
 		self.affiliation       = '1'
 		self.real_exercise_sim = '0'
@@ -34,26 +39,48 @@ class SymbolIdCodeDelta(object) :
 		self.modifier1   = '00'
 		self.modifier2   = '00' 
 
+		self.name    = SymbolIdCodeDelta.NOT_SET
+		self.remarks = SymbolIdCodeDelta.NOT_SET
+
+		self.full_code = SymbolIdCodeDelta.INVALID_FULL_CODE
+
+	@staticmethod
 	def left_zero_pad(string_in, required_length):
 		 return string_in.zfill(required_length)
 
 	def is_valid(self):
 		return self.symbol_set != '00'
 
-	# full_code - to set the full code all at once
+	@property
+	def name(self):
+		return self.__name
+
+	@name.setter
+	def name(self, name):
+		self.__name = name
+
+	@property
+	def remarks(self):
+		return self.__remarks
+
+	@remarks.setter
+	def remarks(self, remarks):
+		self.__remarks = remarks
+
+	# full_code - to set/get the full code all at once
 	@property
 	def full_code(self):
 
-		# TODO: 
-		# if not full_code_valid :
-		populate_code_from_properties()
+		if self.__full_code == SymbolIdCodeDelta.INVALID_FULL_CODE :
+			self.populate_code_from_properties()
 
 		return self.__full_code
 
 	@full_code.setter
 	def full_code(self, full_code):
-		self.__full_code = full_code	
-		populate_properties_from_code()
+		self.__full_code = str(full_code)
+		if (full_code != SymbolIdCodeDelta.INVALID_FULL_CODE) :
+			self.populate_properties_from_code()
 
 	#####################################################
 	# 2525D: A.5.2.1  Set A - First ten digits 
@@ -184,22 +211,52 @@ class SymbolIdCodeDelta(object) :
 	#####################################################
 
 	def populate_code_from_properties(self):
-		# TODO
-		pass
+		string_builder = self.version           # 1-2
+		string_builder+= self.real_exercise_sim # 3
+		string_builder+= self.affiliation       # 4
+		string_builder+= self.symbol_set        # 5-6
+		string_builder+= self.status            # 7
+		string_builder+= self.hq_tf_fd          # 8
+		string_builder+= self.echelon_mobility  # 9-10
+
+		string_builder+= self.entity_code       # 11-16
+		string_builder+= self.modifier1         # 17-18
+		string_builder+= self.modifier2         # 19-20
+
+		self.__full_code = string_builder
 
 	def populate_properties_from_code(self):
-		# TODO
-		pass
 
+		REQUIRED_CODE_LENGTH = 20
+
+		if len(self.full_code) != REQUIRED_CODE_LENGTH :
+			print('Bad Code Length for code: ' + self.full_code)
+			self.full_code = SymbolIdCodeDelta.INVALID_FULL_CODE
+			return
+
+		self.version           = self.full_code[0:2] # 1-2
+		self.real_exercise_sim = self.full_code[2] # 3
+		self.affiliation       = self.full_code[3] # 4
+		self.symbol_set        = self.full_code[4:6] # 5-6
+		self.status            = self.full_code[6] # 7
+		self.hq_tf_fd          = self.full_code[7] # 8
+		self.echelon_mobility  = self.full_code[8:10] # 9-10
+		
+		self.entity_code       = self.full_code[10:16] # 11-16
+		self.modifier1         = self.full_code[16:18] # 17-18
+		self.modifier2         = self.full_code[18:20] # 19-20
+
+	@property
 	def human_readable_code(self):
 		string_builder = "SS:"   + self.symbol_set
 		string_builder+= ":E:"   + self.entity_code
 		string_builder+= ":M1:"  + self.modifier1
 		string_builder+= ":M2:"  + self.modifier2
-		string_builder+= ":A:"   + self.affiliation
-		string_builder+= ":RES:" + self.real_exercise_sim
+		string_builder+= ":AF:"   + self.affiliation
 
 		# optional ones
+		if (self.real_exercise_sim is None or self.real_exercise_sim == '0') :
+			string_builder+= ":RES:" + self.real_exercise_sim
 		if not (self.status is None or self.status == '0') :
 			string_builder+= ":ST:" + self.status
 		if not (self.echelon_mobility is None or self.echelon_mobility == '00') :
@@ -208,7 +265,6 @@ class SymbolIdCodeDelta(object) :
 			string_builder+= ":HTD:" + self.hq_tf_fd
 
 		return string_builder
-
 
 ###############################################################################
 
@@ -297,19 +353,22 @@ class SymbolLookup(object) :
 		print("Initializing using source data: " + inputFile)
 
 		# Open Input File & load into dict (if possible)
-		try :            
-			with open(inputFile, "r") as f_in :
+		try :
+			if sys.version < '3': 
+				f_in = open(inputFile, 'rb')
+			else: 
+				f_in = open(inputFile, "r") 
 
-				reader = csv.reader(f_in, delimiter=',')
+			reader = csv.reader(f_in, delimiter=',')
 
-				next(reader, None) # skip header row
+			next(reader, None) # skip header row
 
-				# Expected Format:
-				#  {2525Charlie1stTen : 2525Charlie1stTen,2525Charlie,2525DeltaSymbolSet,
-				#     2525DeltaEntity,2525DeltaMod1,2525DeltaMod2,2525DeltaName,2525DeltaMod1Name,
-				#     2525DeltaMod2Name,DeltaToCharlie,Remarks}
+			# Expected Format:
+			#  {2525Charlie1stTen : 2525Charlie1stTen,2525Charlie,2525DeltaSymbolSet,
+			#     2525DeltaEntity,2525DeltaMod1,2525DeltaMod2,2525DeltaName,2525DeltaMod1Name,
+			#     2525DeltaMod2Name,DeltaToCharlie,Remarks}
 
-				self.idDict2525CtoD = {row[0]:row for row in reader}
+			self.idDict2525CtoD = {row[0]:row for row in reader}
 
 		except Exception as openEx :            
 			print('Could not open Output File for reading: ' + str(inputFile))
@@ -333,6 +392,7 @@ class SymbolLookup(object) :
 
 		charlieCode = charlieCodeIn.upper()
 
+		# Default to "Retired/Invalid" symbol
 		symbolSetString = '98'
 		entityString    = '100000'
 		mod1String      = '00'
@@ -370,19 +430,26 @@ class SymbolLookup(object) :
 			entityString    = row2525d[3]
 			mod1String      = row2525d[4]
 			mod2String      = row2525d[5]
+			name            = row2525d[6]
+
+			if name.endswith(' : Unknown'): #remove this bad entry from name
+				name = name[:-10]
 
 			remarks = row2525d[10]
-
 			if remarks == 'Retired' :
-				print("Retired Symbol" + lookupCharlieCode)
+				print("WARNING: Retired Symbol=" + lookupCharlieCode)
+			elif remarks == 'pass' :
+				remarks = 'success' # replace with more meaningful remark
 
 		except : 
-			print("Crash with key: " + lookupCharlieCode)
+			print("Crash with SIDC/key: " + lookupCharlieCode)
 
 		symbolId.symbol_set  = symbolSetString
 		symbolId.entity_code = entityString
 		symbolId.modifier1   = mod1String
 		symbolId.modifier2   = mod2String
+		symbolId.name        = name
+		symbolId.remarks     = remarks
 
 		# now we have the base symbol, but the remaining attributes are a little messier to map 
 		affilChar = charlieCode[1]
@@ -400,7 +467,5 @@ class SymbolLookup(object) :
 		echelonChar = charlieCode[11]
 		if echelonChar in SymbolLookup.echelon_mobility_charlie_2_delta_char :
 			symbolId.echelon_mobility = SymbolLookup.echelon_mobility_charlie_2_delta_char[echelonChar]
-
 		
-
 		return symbolId 

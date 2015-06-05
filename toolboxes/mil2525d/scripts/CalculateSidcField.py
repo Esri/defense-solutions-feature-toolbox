@@ -107,13 +107,14 @@ def calculateSidcField() :
 		arcpy.AddMessage('Starting: CalculateSidcField')
 
 		currentPath = os.path.dirname(__file__)
-		defaultDataPath = os.path.normpath(os.path.join(currentPath, r'Data/'))
+		defaultDataPath = os.path.normpath(os.path.join(currentPath, 
+			r'../../../data/mil2525d/testdata/geodatabases/'))
 
 		# 0 : Get input feature class
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC == '') or (inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				r'MilitaryOverlay.gdb/MilitaryFeatures/Units'))
+				r'PairwiseTestData.gdb/MilitaryFeatures/Units'))			
 
 		try : 
 			desc = arcpy.Describe(inputFC)
