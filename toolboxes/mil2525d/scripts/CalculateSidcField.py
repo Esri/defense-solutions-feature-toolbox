@@ -103,6 +103,8 @@ def symbolIdCodeAttributesToCode(attributes) :
 ###
 def calculateSidcField() :
 	
+	feature, features = None, None
+
 	try :
 		arcpy.AddMessage('Starting: CalculateSidcField')
 
@@ -114,7 +116,7 @@ def calculateSidcField() :
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC == '') or (inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				r'PairwiseTestData.gdb/MilitaryFeatures/Units'))			
+				r'PairwiseTestData.gdb/MilitaryFeatures/Air'))			
 
 		try : 
 			desc = arcpy.Describe(inputFC)
@@ -136,9 +138,13 @@ def calculateSidcField() :
 		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))
 		arcpy.AddMessage('1 - SIDC Field: ' + sidcField)
 
-		SYMBOL_ID_FIELD_LIST = ['context', 'identity', 'symbolset', 'entity', \
-			'modifier1', 'modifier2', 'echelon', \
+		# Split this up into fields we *must* have (required) & those that are optional
+		# (we will fail this tool if the require ones aren't there)
+		REQUIRED_FIELDS = ['identity', 'symbolset', 'entity']
+		OPTIONAL_FIELDS = ['context', 'modifier1', 'modifier2', 'echelon', \
 			'mobility', 'array', 'indicator', 'operationalcondition' ]
+
+		SYMBOL_ID_FIELD_LIST = REQUIRED_FIELDS + OPTIONAL_FIELDS
 
 		# Get a list of available feature class fields (we use this in a few places)
 		fieldNameList = []
@@ -152,6 +158,14 @@ def calculateSidcField() :
 
 		if not (sidcField in fieldNameList) : 
 			arcpy.AddError('Could not find field: ' + sidcField)
+			return
+
+		# Yes Python let's me write a statement like this:
+		allRequiredFieldsPresent = len([x for x in REQUIRED_FIELDS if x in fieldNameList])\
+					 == len(REQUIRED_FIELDS)
+
+		if not allRequiredFieldsPresent :
+			arcpy.AddError('Could not find required MIL-2525D(Delta) fields')
 			return
 
 		# Open an update cursor (if possible)

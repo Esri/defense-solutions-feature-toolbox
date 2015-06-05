@@ -155,13 +155,14 @@ def writeMessageFile() :
 		arcpy.AddMessage('Starting: Write Message File')
 
 		currentPath = os.path.dirname(__file__)
-		defaultDataPath = os.path.normpath(os.path.join(currentPath, r'Data/'))
+		defaultDataPath = os.path.normpath(os.path.join(currentPath,
+			r'../../../data/mil2525d/testdata/geodatabases/'))
 
 		# 0 : Get input feature class
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC == '') or (inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				r'MilitaryOverlay.gdb/MilitaryFeatures/Units'))
+				r'PairwiseTestData.gdb/MilitaryFeatures/Air'))			
 
 		try : 
 			desc = arcpy.Describe(inputFC)
@@ -181,37 +182,43 @@ def writeMessageFile() :
 		    outputFile = os.path.normpath(os.path.join(defaultDataPath, r'UnitsMessages.xml'))
 
 		# Open Output File for writing (if possible)
-		try :            
+		try :
 			messageFile=open(outputFile, 'w')
-		except :            
+		except :
 			arcpy.AddError('Could not open Output File for writing: ' + str(outputFile))
 			return
 
-		# 2: Message Type Field
-		messageTypeField = arcpy.GetParameterAsText(2)   
+		# 2: Message Base Tag {"geomessage" or "message")
+		baseMessageTag = arcpy.GetParameterAsText(2)
+		if (baseMessageTag == '') or (baseMessageTag is None):
+			baseMessageTag = 'geomessage'
+
+		# 3: Message Type Field
+		messageTypeField = arcpy.GetParameterAsText(3)
 		
-		# 3: useDomainCodes (Boolean) - Use Domain Codes (instead of Domain Descriptions) 
-		useDomainCodes = arcpy.GetParameterAsText(3) 
+		# 4: useDomainCodes (Boolean) - Use Domain Codes (instead of Domain Descriptions) 
+		useDomainCodes = arcpy.GetParameterAsText(4)
 
 		if (useDomainCodes == '') or (useDomainCodes is None):
 			useDomainCodes = False
 
-		# 4: includeSymbolIdCode - Include Symbol Id Code (Boolean)
-		includeSymbolIdCode = arcpy.GetParameterAsText(4) 
+		# 5: includeSymbolIdCode - Include Symbol Id Code (Boolean)
+		includeSymbolIdCode = arcpy.GetParameterAsText(5)
 
 		if (includeSymbolIdCode == '') or (includeSymbolIdCode is None):
-			includeSymbolIdCode = False
+			includeSymbolIdCode = True
 
-		# 5: Sort Order
-		orderBy = arcpy.GetParameterAsText(5)       
+		# 6: Sort Order
+		orderBy = arcpy.GetParameterAsText(6)
 		
 		arcpy.AddMessage('Running with Parameters:')
 		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))
 		arcpy.AddMessage('1 - Output Message XML File: ' + str(outputFile))
-		arcpy.AddMessage('2 - MessageTypeField: ' + messageTypeField)
-		arcpy.AddMessage('3 - UseDomainCodes: ' + str(useDomainCodes))
-		arcpy.AddMessage('4 - IncludeSymbolIdCode: ' + str(includeSymbolIdCode))
-		arcpy.AddMessage('5 - orderBy: ' + orderBy)
+		arcpy.AddMessage('2 - BaseMessageTag: ' + baseMessageTag)
+		arcpy.AddMessage('3 - MessageTypeField: ' + messageTypeField)
+		arcpy.AddMessage('4 - UseDomainCodes: ' + str(useDomainCodes))
+		arcpy.AddMessage('5 - IncludeSymbolIdCode: ' + str(includeSymbolIdCode))
+		arcpy.AddMessage('6 - orderBy: ' + orderBy)
 		# Add anything else that should be logged up front here:
 		arcpy.AddMessage('{OTHER} - ' + 'FeatureClass ShapeType:' + str(shapeType))
 
@@ -275,7 +282,10 @@ def writeMessageFile() :
 		# In case version/format needed:
 		# messageFile.write('<?xml version="1.0" encoding="UTF-8"?>\n')
 
-		messageFile.write('<geomessages>\n')
+		messagesRootTag = baseMessageTag + 's' # ex: "geomessages"
+		messageVersion = '1.0'
+
+		messageFile.write('<%s>\n' % messagesRootTag)    # <geomessages>       
 
 		for feature in features : 
 
@@ -299,7 +309,10 @@ def writeMessageFile() :
 				except :             
 					messageType = 'position_report' # or (pass)
 
-			messageFile.write('\t<geomessage>\n')
+			# Ex: Next line writes: ex. "\t<geomessage v=\"1.0\">\n"
+			messageFile.write("\t<%s v=\"%s\">\n" % (baseMessageTag, \
+                                                     messageVersion))  
+
 			messageFile.write('\t\t<_id>%s</_id>\n' % uniqueId) 
 			messageFile.write('\t\t<_type>%s</_type>\n' % messageType)
 			messageFile.write('\t\t<_wkid>%i</_wkid>\n' % wkid)
@@ -332,8 +345,12 @@ def writeMessageFile() :
 							domain = fieldNameToDomainName[field]
 							if domain in domainNameToDomainValues : 
 								domainValues = domainNameToDomainValues[domain]
-								description = domainValues[fieldValAsString]
-								fieldValAsString = description # now replace code with description
+								if fieldValAsString in domainValues :
+									description = domainValues[fieldValAsString]
+									fieldValAsString = description # now replace code with description
+								else : 
+									arcpy.AddWarning('Bad Domain value (field,value,domain)=('\
+										+ str(field) + ',' + fieldValAsString + ',' +	domain)
 
 					messageFile.write('\t\t<'+field+'>' + fieldValAsString + '</' + field + '>\n')
 
@@ -344,9 +361,9 @@ def writeMessageFile() :
 					symbolIdCode = symbolIdCodeAttributesToCode(symbolIdCodeAttributes)
 					messageFile.write('\t\t<sidc>%s</sidc>\n' % symbolIdCode)  
 
-			messageFile.write('\t</geomessage>\n')
+			messageFile.write("\t</%s>\n" % baseMessageTag)  # </geomessage>
 
-		messageFile.write('</geomessages>')
+		messageFile.write('</%s>\n' % messagesRootTag)    # </geomessages>
 
 	except Exception as err: 
 		arcpy.AddError(traceback.format_exception_only(type(err), err)[0].rstrip())
