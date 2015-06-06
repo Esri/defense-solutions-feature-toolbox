@@ -40,7 +40,6 @@ def calculateSidcFieldCharlie() :
 		# Get input feature class
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC is "" or inputFC is None):
-			# Assumes TestData folder in same directory as .py
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
 				r'engagementarea.gdb/DirectFireWeapons/DirectFire_FriendlyEquipment'))
 				# r'test_inputs.gdb\FriendlyOperations\FriendlyEquipment'))
@@ -134,6 +133,10 @@ def calculateSidcFieldCharlie() :
 		if (EchelonField in fieldNameList):
 			updatefields.append(EchelonField)
 
+		# Strip off any FeatureDatasets from the GDB name (TODO: this only works with GDBs for now)
+		gdbPath = dataPath.split(".gdb")[0]
+		gdbPath += ".gdb"
+
 		for field in desc.Fields:
 			if field.name in updatefields:
 				# Get domain if any
@@ -142,19 +145,12 @@ def calculateSidcFieldCharlie() :
 					if arcpy.Exists("in_memory/" + field.domain):
 						arcpy.Delete_management("in_memory/" + field.domain)
 					try:
-						# Strip off any FeatureDatasets from the name (TODO: this only works with GDBs for now)
-						gdbPath = dataPath.split(".gdb")[0]
-						gdbPath += ".gdb"
-
 						arcpy.DomainToTable_management(gdbPath, field.domain, \
 													   "in_memory/" + field.domain, \
 													   CODE_FIELD_NAME, DESCRIPTION_FIELD_NAME)
 					except:
-						pass
-					#	#If path is feature dataset
-					#	arcpy.DomainToTable_management(arcpy.Describe(desc.path).path, field.domain,
-					#								   "in_memory/" + field.domain,
-					#								   CODE_FIELD_NAME, DESCRIPTION_FIELD_NAME)
+						arcpy.AddError('Could not export domain: ' + field.domain + \
+							' from ' + gdbPath + ' - tool may not behave as expected.')
 
 		with arcpy.da.UpdateCursor(inputFC, updatefields) as cursor:
 			for row in cursor:
