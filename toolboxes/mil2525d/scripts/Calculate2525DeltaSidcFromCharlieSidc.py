@@ -75,8 +75,8 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 
 		if (conversionRemarksField == '') or (conversionRemarksField is None):
 			# TODO: for debug, remove for production
-			conversionRemarksField = 'staffcomment'
-			# conversionRemarksField = None		
+			# conversionRemarksField = 'staffcomment'
+			conversionRemarksField = None		
 		
 		arcpy.AddMessage('Running with Parameters:')
 		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))

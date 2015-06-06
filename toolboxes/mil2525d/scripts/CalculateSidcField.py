@@ -109,7 +109,7 @@ def calculateSidcField() :
 		arcpy.AddMessage('Starting: CalculateSidcField')
 
 		currentPath = os.path.dirname(__file__)
-		defaultDataPath = os.path.normpath(os.path.join(currentPath, 
+		defaultDataPath = os.path.normpath(os.path.join(currentPath, \
 			r'../../../data/mil2525d/testdata/geodatabases/'))
 
 		# 0 : Get input feature class
