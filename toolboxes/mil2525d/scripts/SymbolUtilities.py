@@ -33,13 +33,13 @@ class SymbolIdCodeDelta(object) :
 		self.version           = '10'
 		self.affiliation       = '1'
 		self.real_exercise_sim = '0'
-		self.symbol_set  = '00'
-		self.status      = '0'
-		self.hq_tf_fd    = '0'
-		self.echelon_mobility = '00'
-		self.entity_code = '000000'
-		self.modifier1   = '00'
-		self.modifier2   = '00' 
+		self.symbol_set        = '00'
+		self.status            = '0'
+		self.hq_tf_fd          = '0'
+		self.echelon_mobility  = '00'
+		self.entity_code       = '000000'
+		self.modifier1         = '00'
+		self.modifier2         = '00'
 
 		self.name    = SymbolIdCodeDelta.NOT_SET
 		self.remarks = SymbolIdCodeDelta.NOT_SET
@@ -80,6 +80,10 @@ class SymbolIdCodeDelta(object) :
 
 	@full_code.setter
 	def full_code(self, full_code):
+		if (full_code is None) :
+			print('Setting Empty Code')
+			return
+
 		self.__full_code = str(full_code)
 		if (full_code != SymbolIdCodeDelta.INVALID_FULL_CODE) :
 			self.populate_properties_from_code()
@@ -372,7 +376,7 @@ class SymbolLookup(object) :
 
 			self.idDict2525CtoD = {row[0]:row for row in reader}
 
-		except Exception as openEx :            
+		except Exception as openEx :
 			print('Could not open file for reading: ' + str(inputFile))
 			return False
 
@@ -553,7 +557,7 @@ class SymbolLookupCharlie(object) :
 		if geoString == SymbolLookupCharlie.POINT_STRING  : 
 			return SymbolLookupCharlie.DEFAULT_POINT_SIDC
 		elif geoString == LINE_STRING :
-			return SymbolLookupCharlie.DEFAULT_LINE_SIDC         
+			return SymbolLookupCharlie.DEFAULT_LINE_SIDC
 		elif geoString == AREA_STRING : 
 			return SymbolLookupCharlie.DEFAULT_AREA_SIDC
 		else :
@@ -564,7 +568,7 @@ class SymbolLookupCharlie(object) :
 		if shapeType == "Point" : 
 			return SymbolLookupCharlie.POINT_STRING
 		elif shapeType == "Polyline" :
-			return SymbolLookupCharlie.LINE_STRING         
+			return SymbolLookupCharlie.LINE_STRING
 		elif shapeType == "Polygon" : 
 			return SymbolLookupCharlie.AREA_STRING
 		else :
@@ -575,7 +579,7 @@ class SymbolLookupCharlie(object) :
 		if shapeType == "Point" : 
 			return SymbolLookupCharlie.DEFAULT_POINT_SIDC
 		elif shapeType == "Polyline" :
-			return SymbolLookupCharlie.DEFAULT_LINE_SIDC         
+			return SymbolLookupCharlie.DEFAULT_LINE_SIDC
 		elif shapeType == "Polygon" : 
 			return SymbolLookupCharlie.DEFAULT_AREA_SIDC
 		else :
@@ -629,7 +633,7 @@ class SymbolLookupCharlie(object) :
 
 			self.sqlitedb.commit()
 
-		except Exception as openEx :            
+		except Exception as openEx :
 			print('Could not open file for reading: ' + str(inputFile))
 			self.sqlitedb = None
 			return False
@@ -668,7 +672,7 @@ class SymbolLookupCharlie(object) :
 		sqliteCursor = self.sqlitedb.cursor()
 
 		lookupSic = self.getMaskedSymbolIdFirst10(symbolId)  
-		lookupSic = lookupSic.upper()                  
+		lookupSic = lookupSic.upper()      
 
 		query = "select " + attribute + " from SymbolInfo where (ID = ?)"
 		sqliteCursor.execute(query, (lookupSic,))
@@ -678,7 +682,7 @@ class SymbolLookupCharlie(object) :
 		if (sqliteRow == None) :
 			lookupSic = lookupSic[0] + 'F' + lookupSic[2] + 'P' + lookupSic[4:10]
 			sqliteCursor.execute(query, (lookupSic,))
-			sqliteRow = sqliteCursor.fetchone()            
+			sqliteRow = sqliteCursor.fetchone()
 
 		if (sqliteRow == None) :
 			print ("WARNING: " + symbolId + ":" + attribute + " NOT FOUND")
@@ -784,7 +788,7 @@ class SymbolLookupCharlie(object) :
 
 			if add2Map : 
 				# add the query results to the map (if valid)
-				self.nameToSIC[symbolNameUpper] = sidc            
+				self.nameToSIC[symbolNameUpper] = sidc
 				print("Adding to Map: [" + symbolNameUpper + ", " + sidc + "]")
 		else:
 			defaultSidc = SymbolLookupCharlie.getDefaultSidcForGeometryString(expectedGeometry)
@@ -812,7 +816,7 @@ class SymbolLookupCharlie(object) :
 		if (sqliteRow == None) :
 			lookupSic = lookupSic[0] + 'F' + lookupSic[2] + 'P' + lookupSic[4:10]
 			sqliteCursor.execute(query, (lookupSic,))
-			sqliteRow = sqliteCursor.fetchone()                   
+			sqliteRow = sqliteCursor.fetchone()
 
 		if (sqliteRow == None) :
 			geoType = SymbolLookupCharlie.UNKNOWN_GEOMETRY_STRING

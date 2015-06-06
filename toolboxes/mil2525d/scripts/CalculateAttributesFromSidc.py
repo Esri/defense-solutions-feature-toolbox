@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #----------------------------------------------------------------------------------
-# CalculateSidcField.py
-# Description: Calculates SIDC Field from attributes
+# CalculateAttributesFromSidc.py
+# Description: Calculates Symbol Display Attributes from an SIDC Field
 # Requirements: ArcGIS Desktop
 #----------------------------------------------------------------------------------
 
@@ -21,88 +21,52 @@ import arcpy
 import os
 import traceback
 
-def symbolIdCodeAttributesToCode(attributes) : 
+import SymbolUtilities
 
-	#  Digits (1 & 2) (Version = "10" = 2525D.0)
-	symbolIdCode = '10'
+def symbolIdCodeToAttributesToCode(code) :
 
-	# Digit 3 (RealExerciseSimulation)
-	if 'context' in attributes :
-		symbolIdCode += attributes['context']
-	else :
-		symbolIdCode += '0'
+	attributes = {}
 
-	# Digit 4 (Affiliation)
-	if 'identity' in attributes :
-		symbolIdCode += attributes['identity']
-	else :
-		symbolIdCode += '0'
+	if code is None : 
+		print("Code is empty, can't continue")
+		return
 
-	# Digit 5-6
-	if 'symbolset' in attributes :
-		symbolIdCode += attributes['symbolset'].zfill(2)
-	else :
-		symbolIdCode += '00'
+	sidc = SymbolUtilities.SymbolIdCodeDelta()
+	sidc.full_code = code
 
-	# Digit 7 (Status)
-	if 'operationalcondition' in attributes : 
-		symbolIdCode += attributes['operationalcondition']
-	else : 
-		symbolIdCode += '0'
+	if not sidc.is_valid() : 
+		print("Can't convert to attributes, SIDC not valid: " + code)
+		return attributes
 
-	# Digit 8 (HQ_TF_FD)
-	if 'indicator' in attributes : 
-		symbolIdCode += attributes['indicator']
-	else : 
-		symbolIdCode += '0'
-	
-	# Digit 9-10
-	# Tricky can come from 1 of 3 different attributes
-	if 'echelon' in attributes : 
-		symbolIdCode += attributes['echelon'].zfill(2)
-	else : 
-		if 'mobility' in attributes : 
-			symbolIdCode += attributes['mobility'].zfill(2)
-		else : 
-			if 'array' in attributes : 
-				symbolIdCode += attributes['array'].zfill(2)
-			else : 
-				symbolIdCode += '00'
+	attributes['context']              = sidc.real_exercise_sim
+	attributes['identity']             = sidc.affiliation
+	attributes['symbolset']            = sidc.symbol_set
+	attributes['operationalcondition'] = sidc.status  
+	attributes['indicator']            = sidc.hq_tf_fd
 
-	# Digit 11-16
-	if 'entity' in attributes : 
-		symbolIdCode += attributes['entity'].zfill(6)
-	else : 
-		symbolIdCode += '000000'
+	# Tricky : several attribute used for same sidc field so we need to set them all
+	attributes['echelon']  = sidc.echelon_mobility
 
-	# Digit 17-18
-	if 'modifier1' in attributes : 
-		symbolIdCode += attributes['modifier1'].zfill(2)
-	else : 
-		symbolIdCode += '00'
+	# TODO: These are set to length=1 in old MilitaryFeatures 
+	# so cause a conflict between the 2 schemas...
+	# attributes['mobility'] = sidc.echelon_mobility
+	# attributes['array']    = sidc.echelon_mobility
 
-	# Digit 19-20
-	if 'modifier2' in attributes : 
-		symbolIdCode += attributes['modifier2'].zfill(2)
-	else : 
-		symbolIdCode += '00'
-	
-	# Final Check:
-	symbolIdCodeLength = len(symbolIdCode)
-	if symbolIdCodeLength != 20 :
-		arcpy.AddWarning("Unexpected Length: Symbol ID Code: " + \
-			symbolIdCode + ", Length: " + str(symbolIdCodeLength))
+	attributes['entity']    = sidc.entity_code
+	attributes['modifier1'] = sidc.modifier1
+	attributes['modifier2'] = sidc.modifier2
 
-	return symbolIdCode
+	return attributes
 
-### calculateSidcField - Calculates a Symbol ID Code field for a Military Feature Class
+### calculateAttributesFromSidcField - Calculates symbol display attributes from 
+### a Symbol ID Code field for a Military Feature Class
 ###
 ### Params:
 ### 0 - input_feature_class (FeatureClass) - input Military Feature Class
 ### 1 - sidc_field (String) - field to store SIDC value
 ###
-def calculateSidcField() :
-	
+def calculateAttributesFromSidcField() :
+
 	feature, features = None, None
 
 	try :
@@ -116,7 +80,8 @@ def calculateSidcField() :
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC == '') or (inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				r'PairwiseTestData.gdb/MilitaryFeatures/Air'))			
+				# r'PairwiseTestData.gdb/MilitaryFeatures/Air'))		
+				r'engagementarea.gdb/DirectFireWeapons/DirectFire_FriendlyEquipment'))					
 
 		try : 
 			desc = arcpy.Describe(inputFC)
@@ -132,7 +97,7 @@ def calculateSidcField() :
 
 		if (sidcField == '') or (sidcField is None):
 			# just pick a known good text field for testing if none supplied
-			sidcField = 'staffcomment' 
+			sidcField = 'SymbolIdDelta' # 'staffcomment' 
 
 		arcpy.AddMessage('Running with Parameters:')
 		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))
@@ -145,6 +110,7 @@ def calculateSidcField() :
 			'mobility', 'array', 'indicator', 'operationalcondition' ]
 
 		SYMBOL_ID_FIELD_LIST = REQUIRED_FIELDS + OPTIONAL_FIELDS
+		SYMBOL_ID_FIELD_LIST.append(sidcField)
 
 		# Get a list of available feature class fields (we use this in a few places)
 		fieldNameList = []
@@ -169,12 +135,12 @@ def calculateSidcField() :
 			return
 
 		# Open an update cursor (if possible)
-		try :            
+		try :
 			fieldNameListAsString = ','.join(fieldNameList) # Change into format expected by UpdateCursor
 			features = arcpy.gp.UpdateCursor(inputFC, '', None, fieldNameListAsString) 
 		except Exception as err: 
 			arcpy.AddError('Could not open Input Feature Class ' + str(inputFC))
-			arcpy.AddError(traceback.format_exception_only(type(err), err)[0].rstrip())           
+			arcpy.AddError(traceback.format_exception_only(type(err), err)[0].rstrip())   
 			return
 
 		if features is None :
@@ -188,30 +154,32 @@ def calculateSidcField() :
 			featureCount += 1
 			arcpy.AddMessage('Processing feature/message: ' + str(featureCount))
 
-			symbolIdCodeAttributes = {}
+			symbolId = feature.getValue(sidcField)
 
-			# Get all field attributes
-			for field in fieldNameList:
-				try : 
-					featureVal = feature.getValue(field)
-				except :
-					arcpy.AddWarning('Could not get feature value for field: ' + field)
-					featureVal = None
-					
-				if featureVal is not None:
+			if symbolId is None:
+				arcpy.AddWarning('Skipping - SIDC in NULL for feature')
+				continue
 
-					if field in SYMBOL_ID_FIELD_LIST : 
-						fieldValAsString = str(feature.getValue(field))
-						symbolIdCodeAttributes[field] = fieldValAsString
+			attributes = symbolIdCodeToAttributesToCode(symbolId)
 
-			symbolIdCode = symbolIdCodeAttributesToCode(symbolIdCodeAttributes)
+			if len(attributes) == 0 :
+				arcpy.AddWarning('Skipping - could not convert SIDC to attributes: ' + symbolId)
+				continue
+			
+			# Now set these calculated attributes in the feature
+			for attribute in attributes:
+				if attribute in fieldNameList :
+					try : 
+						# arcpy.AddMessage("Setting attribute: " + attribute + ' : ' + attributes[attribute])
+						feature.setValue(attribute, attributes[attribute])
+					except :
+						arcpy.AddWarning('Could not set feature value for field: ' + attribute)
 
 			try : 
-				feature.setValue(sidcField, symbolIdCode)
-
+				# update the feature
 				features.updateRow(feature)
 			except :
-				arcpy.AddError('Could not update feature value for field: ' + sidcField)
+				arcpy.AddError('Could not update feature (probably a schema conflict)')
 
 	except Exception as err: 
 		arcpy.AddError(traceback.format_exception_only(type(err), err)[0].rstrip())
@@ -224,4 +192,4 @@ def calculateSidcField() :
 			del features
 
 if __name__ == '__main__':
-	calculateSidcField()
+	calculateAttributesFromSidcField()
