@@ -147,13 +147,15 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 
 				symbolId = symbolLookup.getDeltaCodeFromCharlie(mil2525CharlieSidc)
 
-				if not symbolId.is_valid() : 
-					print("Could not convert 2525Charlie SIDC: " + mil2525CharlieSidc)
-					continue
+				if symbolId.is_valid() : 
+					symbolIdCodeDelta = symbolId.full_code # .human_readable_code
+					conversionRemarks = symbolId.remarks
+				else :
+					arcpy.AddWarning("Could not convert 2525Charlie SIDC: " + mil2525CharlieSidc)
+					# Fallback case
+					symbolIdCodeDelta = SymbolIdCodeDelta.RETIRED_UNKNOWN_FULL_CODE
+					conversionRemarks = "Conversion Error"
 				
-				symbolIdCodeDelta = symbolId.full_code # .human_readable_code
-				conversionRemarks = symbolId.remarks
-
 				try : 
 					feature.setValue(sidcFieldDelta, symbolIdCodeDelta)
 

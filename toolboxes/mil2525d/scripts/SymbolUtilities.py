@@ -27,6 +27,7 @@ class SymbolIdCodeDelta(object) :
 
 	INVALID_FULL_CODE = 'INVALID'
 	NOT_SET = 'NOT SET'
+	RETIRED_UNKNOWN_FULL_CODE = '10019800001000000000'
 
 	def __init__(self) :
 
@@ -425,9 +426,11 @@ class SymbolLookup(object) :
 				# some keys only have an "F" version
 				alternateLookupKey = lookupCharlieCode[0] + 'F' + lookupCharlieCode[2:10]
 				if not (alternateLookupKey in self.idDict2525CtoD) :
-					print("Could not find key: " + lookupCharlieCode)
-					return symbolId
-				else :
+					# ...and some keys only have a "H" version...
+					alternateLookupKey = lookupCharlieCode[0] + 'H' + lookupCharlieCode[2:10]
+					if not (alternateLookupKey in self.idDict2525CtoD) :
+						print("Could not find key: " + lookupCharlieCode)
+						return symbolId
 					lookupCharlieCode = alternateLookupKey
 
 			row2525d = self.idDict2525CtoD[lookupCharlieCode]

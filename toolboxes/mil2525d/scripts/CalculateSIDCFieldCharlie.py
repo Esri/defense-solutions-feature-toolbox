@@ -43,8 +43,7 @@ def calculateSidcFieldCharlie() :
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC is "" or inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				r'engagementarea.gdb/DirectFireWeapons/DirectFire_FriendlyEquipment'))
-				# r'test_inputs.gdb\FriendlyOperations\FriendlyEquipment'))
+				r'test_inputs.gdb\FriendlyOperations\FriendlyEquipment'))
 
 		if not arcpy.Exists(inputFC) :
 			msg = "Input Dataset does not exist: " + str(inputFC) + " - exiting"
@@ -60,7 +59,8 @@ def calculateSidcFieldCharlie() :
 
 		standard = arcpy.GetParameterAsText(2)
 		symbolDictionary = SymbolUtilities.SymbolLookupCharlie(standard)
-		# Get input feature class
+
+		# Get Echelon field (to be used to determine echelon attribute)
 		EchelonField = arcpy.GetParameterAsText(3)
 		if (EchelonField == "" or EchelonField is None):
 			EchelonField = "echelon"
@@ -180,22 +180,28 @@ def calculateSidcFieldCharlie() :
 
 				if (symbolNameFieldName in fieldNameToDomainName):
 					domain = fieldNameToDomainName[symbolNameFieldName]
-					whereClause = "%s = %s" % (CODE_FIELD_NAME, row[1])
-					domainRows = arcpy.gp.SearchCursor("in_memory/" + domain, whereClause)
-					for domainRow in domainRows:
-						symbolname = domainRow.getValue(DESCRIPTION_FIELD_NAME)
-						break
-
-				if (EchelonField in updatefields and row[2] is not None):
-				## TODO - this needs more testing (and moved to SymbolLookup)
-					echelonString = row[2]
-					if (EchelonField in fieldNameToDomainName):
-						domain = fieldNameToDomainName[EchelonField]
-						whereClause = "%s = %s" % (CODE_FIELD_NAME, row[2])
-						domainRows = arcpy.SearchCursor("in_memory/" + domain, whereClause)
+					symbolRuleCode = row[1]
+					if symbolRuleCode is None :
+						arcpy.AddError('Symbol Rule is Null, setting to default symbol')
+					else : 
+						whereClause = "%s = %s" % (CODE_FIELD_NAME, symbolRuleCode)
+						domainRows = arcpy.gp.SearchCursor("in_memory/" + domain, whereClause)
 						for domainRow in domainRows:
-							echelonString = domainRow.getValue(DESCRIPTION_FIELD_NAME)
-							echelonString = echelonString.upper()
+							symbolname = domainRow.getValue(DESCRIPTION_FIELD_NAME)
+							break
+
+				echelonString = '0'				
+				if (EchelonField in updatefields) and (EchelonField in fieldNameToDomainName) :
+					echelonValue = row[2]
+					if echelonValue is not None:
+						domain = fieldNameToDomainName[EchelonField]
+						if not echelonString is None :
+							whereClause = "%s = %s" % (CODE_FIELD_NAME, echelonValue)
+							domainRows = arcpy.SearchCursor("in_memory/" + domain, whereClause)
+							for domainRow in domainRows:
+								echelonString = domainRow.getValue(DESCRIPTION_FIELD_NAME)
+								echelonString = echelonString.upper()
+								break
 
 				expectedGeometry = SymbolUtilities.SymbolLookupCharlie.getGeometryStringFromShapeType(desc.shapeType)
 
