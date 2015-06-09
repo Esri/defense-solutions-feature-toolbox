@@ -135,7 +135,7 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 		for feature in features : 
 
 			featureCount += 1
-			arcpy.AddMessage('Processing feature/message: ' + str(featureCount))
+			arcpy.AddMessage('Processing feature: ' + str(featureCount))
 
 			mil2525CharlieSidc = None
 			try : 

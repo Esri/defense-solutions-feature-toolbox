@@ -70,7 +70,7 @@ def calculateAttributesFromSidcField() :
 	feature, features = None, None
 
 	try :
-		arcpy.AddMessage('Starting: CalculateSidcField')
+		arcpy.AddMessage('Starting: CalculateAttributesFromSidc')
 
 		currentPath = os.path.dirname(__file__)
 		defaultDataPath = os.path.normpath(os.path.join(currentPath, \
@@ -152,7 +152,7 @@ def calculateAttributesFromSidcField() :
 		for feature in features : 
 
 			featureCount += 1
-			arcpy.AddMessage('Processing feature/message: ' + str(featureCount))
+			arcpy.AddMessage('Processing feature: ' + str(featureCount))
 
 			symbolId = feature.getValue(sidcField)
 

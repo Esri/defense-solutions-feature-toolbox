@@ -33,6 +33,8 @@ def calculateSidcFieldCharlie() :
 
 	try :
 
+		arcpy.AddMessage('Starting: CalculateSIDCFieldCharlie')
+
 		currentPath = os.path.dirname(__file__)
 		defaultDataPath = os.path.normpath(os.path.join(currentPath, \
 			r'../../../data/mil2525d/testdata/geodatabases/'))
@@ -51,7 +53,7 @@ def calculateSidcFieldCharlie() :
 
 		desc = arcpy.Describe(inputFC)
 
-		# Get input feature class
+		# Get SIDC Field
 		SIDCField = arcpy.GetParameterAsText(1)
 		if (SIDCField == "" or SIDCField is None):
 			SIDCField = "sidc"
@@ -78,8 +80,11 @@ def calculateSidcFieldCharlie() :
 
 		if (affiliation == "") or (affiliation is None) or (affiliation == "NOT_SET") :
 			affiliation = ""
+			# TRICKY: Military Features did not have an "affiliation" attribute 
+			# so we need to try to derive from the feature class name
 			# If not set, then try to derive from the feature class name 
-			# This will work with the default Military Features lpk/FGDB
+			# This will work with the default Military Features lpk/FGDB layers (except METOC), 
+			# but perhaps not others that use a different convention
 			dataPathUpper = dataPath.upper()
 			datasetNameUpper = datasetName.upper()
 			if SymbolUtilities.SymbolLookupCharlie.FRIENDLY_AFFILIATION in dataPathUpper \
@@ -100,6 +105,14 @@ def calculateSidcFieldCharlie() :
 				arcpy.AddWarning("WARNING: could not determine affiliation, defaulting to " + \
 							   SymbolUtilities.SymbolLookupCharlie.FRIENDLY_AFFILIATION)
 				affiliation = SymbolUtilities.SymbolLookupCharlie.FRIENDLY_AFFILIATION
+
+		##Print Settings
+		arcpy.AddMessage('Running with Parameters:')
+		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))
+		arcpy.AddMessage('1 - SIDC Field: ' + str(SIDCField))
+		arcpy.AddMessage('2 - Standard: ' + standard)
+		arcpy.AddMessage('3 - EchelonField: ' + str(EchelonField))
+		arcpy.AddMessage('4 - Affiliation: ' + str(affiliation))
 
 		##Calculation Code
 
@@ -152,8 +165,15 @@ def calculateSidcFieldCharlie() :
 						arcpy.AddError('Could not export domain: ' + field.domain + \
 							' from ' + gdbPath + ' - tool may not behave as expected.')
 
+
 		with arcpy.da.UpdateCursor(inputFC, updatefields) as cursor:
+
+			featureCount = 0
+
 			for row in cursor:
+
+				featureCount += 1
+				arcpy.AddMessage('Processing feature: ' + str(featureCount))
 
 				echelonString = ""
 				symbolname = "NOT_FOUND_IN_REP_RULE"

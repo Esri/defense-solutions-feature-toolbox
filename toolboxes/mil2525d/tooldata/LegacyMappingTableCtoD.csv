@@ -498,7 +498,7 @@ S*GPUCII--,SPGPUCII-------,10,121105,00,00,Movement and Maneuver : Infantry : In
 S*GPUCAWS-,SPGPUCAWS------,10,120400,01,51,Movement and Maneuver : Antitank/Antiarmor : Unknown,Mobility : Air Mobile/Air Assault (US Only),Mobility : Wheeled,SPGPUCAWS------,pass
 S*GPUCFRMR,SPGPUCFRMR-----,10,130301,41,51,Fires : Field Artillery : Self-propelled,Capability : Multiple Rocket Launcher,Mobility : Wheeled,SPGPUCFRMR-----,pass
 S*GPUCFRMT,SPGPUCFRMT-----,10,130302,41,47,Fires : Field Artillery : Target Acquisition : Unknown,Capability : Multiple Rocket Launcher,Mobility : Towed,SPGPUCFRMT-----,pass
-S*GPU-----,SPGPU----------,98,100000,00,00,,,,,Retired
+S*GPU-----,SPGPU----------,10,000000,00,00,,,,,Substitute
 S*GPUH----,SPGPUH---------,98,100000,00,00,,,,,Retired
 S*GPUCDSC-,SPGPUCDSC------,10,111100,00,00,Command and Control : Tactical Satellite,,,SPGPUCDSC------,pass
 S*GPUCDSS-,SPGPUCDSS------,98,100000,00,00,,,,,Retired

@@ -553,15 +553,23 @@ class SymbolLookupCharlie(object) :
 				(UNKNOWN_AFFILIATION, 'U')])
 
 	@staticmethod
-	def getDefaultSidcForGeometryString(geoString) : 
-		if geoString == SymbolLookupCharlie.POINT_STRING  : 
-			return SymbolLookupCharlie.DEFAULT_POINT_SIDC
-		elif geoString == LINE_STRING :
-			return SymbolLookupCharlie.DEFAULT_LINE_SIDC
-		elif geoString == AREA_STRING : 
-			return SymbolLookupCharlie.DEFAULT_AREA_SIDC
-		else :
-			return SymbolLookupCharlie.DEFAULT_POINT_SIDC
+	def getDefaultSidcForGeometryString(geoString, affiliation) : 
+
+		defaultSidc = SymbolLookupCharlie.DEFAULT_POINT_SIDC
+
+		if geoString == SymbolLookupCharlie.LINE_STRING :
+			defaultSidc = SymbolLookupCharlie.DEFAULT_LINE_SIDC
+		elif geoString == SymbolLookupCharlie.AREA_STRING : 
+			defaultSidc = SymbolLookupCharlie.DEFAULT_AREA_SIDC
+
+		# include the affiliation for the not found ones
+		if (not affiliation is None) and \
+			(affiliation in SymbolLookupCharlie.affiliationToAffiliationChar) : 
+			defaultSidc = defaultSidc[0] + \
+				SymbolLookupCharlie.affiliationToAffiliationChar[affiliation] + \
+				defaultSidc[2:15]
+
+		return defaultSidc
 
 	@staticmethod
 	def getGeometryStringFromShapeType(shapeType) :
@@ -791,7 +799,7 @@ class SymbolLookupCharlie(object) :
 				self.nameToSIC[symbolNameUpper] = sidc
 				print("Adding to Map: [" + symbolNameUpper + ", " + sidc + "]")
 		else:
-			defaultSidc = SymbolLookupCharlie.getDefaultSidcForGeometryString(expectedGeometry)
+			defaultSidc = SymbolLookupCharlie.getDefaultSidcForGeometryString(expectedGeometry, affiliation)
 			sidc = defaultSidc
 			warningMsg = "Warning: Could not map " + symbolNameUpper + " to valid SIDC - returning default: " + sidc
 			print(warningMsg)
