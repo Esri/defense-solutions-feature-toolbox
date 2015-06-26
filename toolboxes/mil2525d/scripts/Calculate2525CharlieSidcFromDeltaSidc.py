@@ -47,10 +47,11 @@ def calculate2525CharlieSidcFromDeltaSidc() :
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC == '') or (inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				r'militaryoverlay.gdb/MilitaryFeatures/ControlMeasuresPoints'))
+				r'militaryoverlay.gdb/MilitaryFeatures/ControlMeasuresLines'))
 
 		try : 
 			desc = arcpy.Describe(inputFC)
+			featureClassShapeType = desc.shapeType
 		except :
 			desc = None
 
@@ -62,21 +63,22 @@ def calculate2525CharlieSidcFromDeltaSidc() :
 		sidcFieldDelta = arcpy.GetParameterAsText(1)
 
 		if (sidcFieldDelta == '') or (sidcFieldDelta is None):
-			sidcFieldDelta = 'SIDCDelta'
+			sidcFieldDelta = 'DeltaSIDC'
 
 		# 2: sidc_field_2525_D
 		sidcFieldCharlie = arcpy.GetParameterAsText(2)
 
 		if (sidcFieldCharlie == '') or (sidcFieldCharlie is None):
-			sidcFieldCharlie = 'SIDCCharlie'
+			sidcFieldCharlie = 'CharlieSIDC'
 
 		# 3 : conversion remarks (optional)
 		conversionRemarksField = arcpy.GetParameterAsText(3)
 
 		if (conversionRemarksField == '') or (conversionRemarksField is None):
-			# TODO: for debug, remove for production
-			conversionRemarksField = 'uniquedesignation'
-			# conversionRemarksField = None		
+			# TODO: for debug, remove for production - Test Setting:
+			# conversionRemarksField = 'uniquedesignation'
+			# Production setting:
+			conversionRemarksField = None		
 		
 		arcpy.AddMessage('Running with Parameters:')
 		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))
@@ -84,6 +86,7 @@ def calculate2525CharlieSidcFromDeltaSidc() :
 		arcpy.AddMessage('2 - SIDC Field (Charlie): ' + sidcFieldCharlie)
 		if not conversionRemarksField is None : 
 			arcpy.AddMessage('3 - Conversion Remarks Field: ' + conversionRemarksField)
+		arcpy.AddMessage('{OTHER} - ' + 'FeatureClass ShapeType:' + str(featureClassShapeType))
 
 		# the list of fields we want to check exist & are of the correct type
 		fieldNameToCheckList = [sidcFieldCharlie, sidcFieldDelta]
@@ -152,7 +155,19 @@ def calculate2525CharlieSidcFromDeltaSidc() :
 				
 				if symbolIdCharlie is None or \
 					symbolIdCharlie == SymbolUtilities.SymbolLookupCharlie.DEFAULT_POINT_SIDC:
-					arcpy.AddWarning("Could not convert 2525Delta SIDC: " + mil2525DeltaSidc)
+					# Get the default SIDC based on the shape/geometry type:
+
+					expectedGeometry = \
+						SymbolUtilities.SymbolLookupCharlie.getGeometryStringFromShapeType( \
+							featureClassShapeType)
+					symbolIdCharlie = \
+						SymbolUtilities.SymbolLookupCharlie.getDefaultSidcForGeometryString( \
+							expectedGeometry, None)
+					arcpy.AddWarning('Could not convert 2525Delta SIDC: ' + mil2525DeltaSidc + \
+						', using default SIDC: ' + symbolIdCharlie)
+					conversionRemarks = 'FAILED: not found in D->C Mapping Table'
+				else:
+					arcpy.AddMessage('Converted to Charlie SIDC: ' + symbolIdCharlie)
 				
 				try : 
 					feature.setValue(sidcFieldCharlie, symbolIdCharlie)

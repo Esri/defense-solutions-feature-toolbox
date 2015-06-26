@@ -28,7 +28,8 @@ class SymbolIdCodeDelta(object) :
 
 	INVALID_FULL_CODE = 'INVALID'
 	NOT_SET = 'NOT SET'
-	RETIRED_UNKNOWN_FULL_CODE = '10019800001000000000'
+	RETIRED_UNKNOWN_FULL_CODE  = '10019800001000000000'
+	RETIRED_UNKNOWN_SHORT_CODE = '98100000'
 
 	def __init__(self) :
 
@@ -89,6 +90,32 @@ class SymbolIdCodeDelta(object) :
 		self.__full_code = str(full_code)
 		if (full_code != SymbolIdCodeDelta.INVALID_FULL_CODE) :
 			self.populate_properties_from_code()
+
+	# short_code - to set/get the shortened (8 digit icon id) code 
+	@property
+	def short_code(self):
+
+		if self.__full_code == SymbolIdCodeDelta.INVALID_FULL_CODE :
+			self.populate_code_from_properties()
+
+		if (len(self.__full_code) < 16) :
+			self.__short_code = SymbolIdCodeDelta.RETIRED_UNKNOWN_SHORT_CODE
+		else :
+			self.__short_code = self.__full_code[4:6] + self.__full_code[10:16]
+
+		return self.__short_code
+
+	@short_code.setter
+	def short_code(self, short_code):
+
+		short_code_str = str(short_code)
+
+		if (short_code is None) or len(short_code_str) < 8 :
+			print('Setting Empty or Invalid Short Code')
+			return
+
+		self.__short_code = str(short_code_str)
+		self.full_code = '1001' + short_code_str[0:2] + '0000' + short_code_str[2:8] + '0000' 
 
 	#####################################################
 	# 2525D: A.5.2.1  Set A - First ten digits 
@@ -570,6 +597,7 @@ class SymbolLookup(object) :
 		if (sqliteRow == None) :
 			print ("WARNING: Attributes NOT FOUND in query: ", symbolSetString, entityString, \
 										mod1String, mod2String)
+			warningRemarks = 'Symbol not found in D->C Mapping Table'
 			return None
 		else :
 			if warningRemarks is not None and len(sqliteRow) > 10 :
@@ -742,7 +770,7 @@ class SymbolLookupCharlie(object) :
 		elif geoString == SymbolLookupCharlie.AREA_STRING : 
 			defaultSidc = SymbolLookupCharlie.DEFAULT_AREA_SIDC
 
-		# include the affiliation for the not found ones
+		# include the affiliation for the not found ones (if parameter is supplied)
 		if (not affiliation is None) and \
 			(affiliation in SymbolLookupCharlie.affiliationToAffiliationChar) : 
 			defaultSidc = defaultSidc[0] + \
@@ -759,6 +787,8 @@ class SymbolLookupCharlie(object) :
 			return SymbolLookupCharlie.LINE_STRING
 		elif shapeType == "Polygon" : 
 			return SymbolLookupCharlie.AREA_STRING
+		elif shapeType == "MultiPoint" :
+			return SymbolLookupCharlie.LINE_STRING
 		else :
 			return SymbolLookupCharlie.POINT_STRING
 

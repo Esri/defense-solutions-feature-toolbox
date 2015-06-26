@@ -205,6 +205,7 @@ def calculateSidcField() :
 						symbolIdCodeAttributes[field] = fieldValAsString
 
 			symbolIdCode = symbolIdCodeAttributesToCode(symbolIdCodeAttributes)
+			arcpy.AddMessage('Calculated SIDC: ' + symbolIdCode)
 
 			try : 
 				feature.setValue(sidcField, symbolIdCode)
