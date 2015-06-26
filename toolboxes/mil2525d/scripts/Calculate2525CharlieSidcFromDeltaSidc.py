@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ----------------------------------------------------------------------------------
-# Calculate2525DeltaSidcFromCharlieSidc.py
-# Description: GP Tool to Calculate 2525D(Delta) SIDC from 2525C(Charlie) SIDC
+# Calculate2525CharlieSidcFromDeltaSidc.py
+# Description: GP Tool to Calculate 2525C(Charlie) SIDC from 2525D(Delta) SIDC
 # Requirements: ArcGIS Desktop
 # ----------------------------------------------------------------------------------
 
@@ -23,31 +23,31 @@ import traceback
 
 import SymbolUtilities
 
-### calculate2525DeltaSidcFromCharlieSidc - Calculates a Symbol ID Code field from the previous 
+### calculate2525CharlieSidcFromDeltaSidc - Calculates a Symbol ID Code field from the previous 
 ###     version (Charlie) to the current version (Delta)
 ###
 ### Params:
-### 0 - input_feature_class (FeatureClass) - input Military Feature Class
-### 1 - sidc_field_2525_C(Charlie) (String) - field to read 2525 C(Charlie) SIDC value
-### 2 - sidc_field_2525_D(Delta) (String) - field to store 2525 D(Delta) SIDC value
-### 3 - conversion_remarks_field (optional) - reason code could not be converted if applicable
+### 0 - input_feature_class (FeatureClass)  - input Military Feature Class
+### 1 - sidc_field_2525_D(Delta) (String)   - field to read 2525 D(Delta) SIDC value
+### 2 - sidc_field_2525_C(Charlie) (String) - field to store 2525 C(Charlie) SIDC value
+### 3 - conversion_remarks_field (optional) - remarks or reason code could not be converted if applicable
 ###
-def calculate2525DeltaSidcFromCharlieSidc() :
+def calculate2525CharlieSidcFromDeltaSidc() :
 
 	feature, features = None, None
 
 	try :
-		arcpy.AddMessage('Starting: Calculate2525DeltaSidcFromCharlieSidc')
+		arcpy.AddMessage('Starting: Calculate2525CharlieSidcFromDeltaSidc')
 
 		currentPath = os.path.dirname(__file__)
 		defaultDataPath = os.path.normpath(os.path.join(currentPath, \
-			r'../../../data/mil2525d/testdata/geodatabases/'))
+			r'../../../data/mil2525d/testdata/'))
 
 		# 0 : Get input feature class
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC == '') or (inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				r'test_inputs.gdb/FriendlyOperations/FriendlyUnits'))
+				r'militaryoverlay.gdb/MilitaryFeatures/ControlMeasuresPoints'))
 
 		try : 
 			desc = arcpy.Describe(inputFC)
@@ -59,29 +59,29 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 			return
 
 		# 1: sidc_field_2525_C
-		sidcFieldCharlie = arcpy.GetParameterAsText(1)
-
-		if (sidcFieldCharlie == '') or (sidcFieldCharlie is None):
-			sidcFieldCharlie = 'sic'
-
-		# 2: sidc_field_2525_D
-		sidcFieldDelta = arcpy.GetParameterAsText(2)
+		sidcFieldDelta = arcpy.GetParameterAsText(1)
 
 		if (sidcFieldDelta == '') or (sidcFieldDelta is None):
-			sidcFieldDelta = 'sidc'
+			sidcFieldDelta = 'SIDCDelta'
+
+		# 2: sidc_field_2525_D
+		sidcFieldCharlie = arcpy.GetParameterAsText(2)
+
+		if (sidcFieldCharlie == '') or (sidcFieldCharlie is None):
+			sidcFieldCharlie = 'SIDCCharlie'
 
 		# 3 : conversion remarks (optional)
 		conversionRemarksField = arcpy.GetParameterAsText(3)
 
 		if (conversionRemarksField == '') or (conversionRemarksField is None):
 			# TODO: for debug, remove for production
-			# conversionRemarksField = 'staffcomment'
-			conversionRemarksField = None		
+			conversionRemarksField = 'uniquedesignation'
+			# conversionRemarksField = None		
 		
 		arcpy.AddMessage('Running with Parameters:')
 		arcpy.AddMessage('0 - Input Military Feature Class: ' + str(inputFC))
-		arcpy.AddMessage('1 - SIDC Field (Charlie): ' + sidcFieldCharlie)
-		arcpy.AddMessage('2 - SIDC Field (Delta): ' + sidcFieldDelta)
+		arcpy.AddMessage('1 - SIDC Field (Delta): ' + sidcFieldDelta)
+		arcpy.AddMessage('2 - SIDC Field (Charlie): ' + sidcFieldCharlie)
 		if not conversionRemarksField is None : 
 			arcpy.AddMessage('3 - Conversion Remarks Field: ' + conversionRemarksField)
 
@@ -137,34 +137,32 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 			featureCount += 1
 			arcpy.AddMessage('Processing feature: ' + str(featureCount))
 
-			mil2525CharlieSidc = None
+			mil2525DeltaSidc = None
 			try : 
-				mil2525CharlieSidc = feature.getValue(sidcFieldCharlie)
+				mil2525DeltaSidc = feature.getValue(sidcFieldDelta)
 			except :
-				arcpy.AddWarning('Could not get feature value for field: ' + sidcFieldCharlie)
+				arcpy.AddWarning('Could not get feature value for field: ' + sidcFieldDelta)
 					
-			if mil2525CharlieSidc is not None:
+			if mil2525DeltaSidc is not None:
 
-				symbolId = symbolLookup.getDeltaCodeFromCharlie(mil2525CharlieSidc)
+				arcpy.AddMessage("Looking up Charlie SIDC for Delta SIDC: " + mil2525DeltaSidc)
 
-				if symbolId.is_valid() : 
-					symbolIdCodeDelta = symbolId.full_code
-					conversionRemarks = symbolId.remarks
-				else :
-					arcpy.AddWarning("Could not convert 2525Charlie SIDC: " + mil2525CharlieSidc)
-					# Fallback case
-					symbolIdCodeDelta = SymbolIdCodeDelta.RETIRED_UNKNOWN_FULL_CODE
-					conversionRemarks = "Conversion Error"
+				symbolIdCharlie, symboldName, conversionRemarks = \
+					symbolLookup.getCharlieCodeFromDelta(mil2525DeltaSidc)
+				
+				if symbolIdCharlie is None or \
+					symbolIdCharlie == SymbolUtilities.SymbolLookupCharlie.DEFAULT_POINT_SIDC:
+					arcpy.AddWarning("Could not convert 2525Delta SIDC: " + mil2525DeltaSidc)
 				
 				try : 
-					feature.setValue(sidcFieldDelta, symbolIdCodeDelta)
+					feature.setValue(sidcFieldCharlie, symbolIdCharlie)
 
 					if not (conversionRemarksField is None or conversionRemarks is None) :
 						feature.setValue(conversionRemarksField, conversionRemarks)
 
 					features.updateRow(feature)
 				except :
-					arcpy.AddError('Could not update feature value for field: ' + sidcFieldDelta)
+					arcpy.AddError('Could not update feature value for field: ' + sidcFieldCharlie)
 
 	except Exception as err: 
 		arcpy.AddError(traceback.format_exception_only(type(err), err)[0].rstrip())
@@ -177,4 +175,4 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 			del features
 
 if __name__ == '__main__':
-	calculate2525DeltaSidcFromCharlieSidc()
+	calculate2525CharlieSidcFromDeltaSidc()

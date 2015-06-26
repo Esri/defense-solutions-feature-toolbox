@@ -405,6 +405,14 @@ class SymbolLookup(object) :
 
 		return self.initialized()
 	
+	@staticmethod
+	# Search a dictionary for a value & return the key
+	def getDictionaryKeyByValue(dict, searchValue):
+		for key, value in dict.items():
+			if value == searchValue:
+				return key
+		return None # if not found
+
 	def queryDbEntryFromCharlieFirstTen(self, charlieFirstTen) :
 
 		if not self.initialized() or len(charlieFirstTen) < 10 :
@@ -507,7 +515,8 @@ class SymbolLookup(object) :
 		symbolId.name        = name
 		symbolId.remarks     = remarks
 
-		# now we have the base symbol, but the remaining attributes are a little messier to map 
+		# now we have the base symbol, but the remaining attributes (affiliation, status, 
+		# HQTFFD, echelon) - are a little messier to map, so just use Look Up Tables 
 		affilChar = charlieCode[1]
 		if affilChar in SymbolLookup.affiliation_charlie_2_delta_char :
 			symbolId.affiliation = SymbolLookup.affiliation_charlie_2_delta_char[affilChar]
@@ -577,7 +586,7 @@ class SymbolLookup(object) :
 		symbolIdDelta.full_code = deltaCodeIn
 
 		# Default to "Unknown" symbol
-		charlieCode = 'SUGP-----------'
+		charlieCode = SymbolLookupCharlie.DEFAULT_POINT_SIDC
 		name        = 'Not Found'
 		remarks     = 'Not Found'
 
@@ -594,7 +603,41 @@ class SymbolLookup(object) :
 			row2525d = self.queryDbEntryFromDeltaAttributes(symbolSetString, \
 				entityString, mod1String, mod2String)
 
+			if (row2525d is None) or (len(row2525d) < 10):
+				print("Could not find entry for Delta ID: " + deltaCodeIn)
+				return charlieCode, name, remarks
+
 			charlieCode = row2525d[1]
+			if charlieCode is None or len(charlieCode) < 15 :
+				print("Could not find 2525C column entry for Delta ID: " + deltaCodeIn)
+				return charlieCode, name, remarks
+
+			# now we have the base symbol, but the remaining attributes (affiliation, status, 
+			# HQTFFD, echelon) - are a little messier to map, so just use Look Up Tables 
+
+			charlieAffilChar = SymbolLookup.getDictionaryKeyByValue(
+				SymbolLookup.affiliation_charlie_2_delta_char, symbolIdDelta.affiliation)
+			if charlieAffilChar is None :
+				charlieAffilChar = 'U'
+
+			charlieStatusChar = SymbolLookup.getDictionaryKeyByValue(
+				SymbolLookup.status_charlie_2_delta_char, symbolIdDelta.status)
+			if charlieStatusChar is None :
+				charlieStatusChar = 'P'
+		
+			charlieHqFdTfChar = SymbolLookup.getDictionaryKeyByValue(
+				SymbolLookup.hq_tf_fd_charlie_2_delta_char, symbolIdDelta.hq_tf_fd)
+			if charlieHqFdTfChar is None :
+				charlieHqFdTfChar = '-'
+
+			charlieEchelonChar = SymbolLookup.getDictionaryKeyByValue(
+				SymbolLookup.echelon_mobility_charlie_2_delta_char, symbolIdDelta.echelon_mobility)
+			if charlieEchelonChar is None :
+				charlieEchelonChar = '-'
+
+			# Now put the SIDC back together with the mapped+correct attributes
+			charlieCode = charlieCode[0] + charlieAffilChar + charlieCode[2] + charlieStatusChar + \
+				charlieCode[4:10] + charlieHqFdTfChar + charlieEchelonChar + charlieCode[12:]
 
 			name    = row2525d[6]
 			if name.endswith(' : Unknown'): #remove this bad entry from name
