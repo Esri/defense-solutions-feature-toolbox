@@ -146,7 +146,11 @@ def calculate2525CharlieSidcFromDeltaSidc() :
 			except :
 				arcpy.AddWarning('Could not get feature value for field: ' + sidcFieldDelta)
 					
-			if mil2525DeltaSidc is not None:
+			if mil2525DeltaSidc is None :
+
+				arcpy.AddWarning("Delta SIDC is null - skipping")
+
+			else : 
 
 				arcpy.AddMessage("Looking up Charlie SIDC for Delta SIDC: " + mil2525DeltaSidc)
 
@@ -165,7 +169,6 @@ def calculate2525CharlieSidcFromDeltaSidc() :
 							expectedGeometry, None)
 					arcpy.AddWarning('Could not convert 2525Delta SIDC: ' + mil2525DeltaSidc + \
 						', using default SIDC: ' + symbolIdCharlie)
-					conversionRemarks = 'FAILED: not found in D->C Mapping Table'
 				else:
 					arcpy.AddMessage('Converted to Charlie SIDC: ' + symbolIdCharlie)
 				

@@ -651,7 +651,7 @@ class SymbolLookup(object) :
 		# Default to "Unknown" symbol
 		charlieCode = SymbolLookupCharlie.DEFAULT_POINT_SIDC
 		name        = 'Not Found'
-		remarks     = 'Not Found'
+		remarks     = 'FAILED: not found in D->C Mapping Table'
 
 		# allow either the short code or the full code
 		if len(deltaCodeIn) == 8 :
