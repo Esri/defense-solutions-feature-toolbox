@@ -312,7 +312,7 @@ class SymbolLookup(object) :
                 ('F', '3'), \
                 ('N', '4'), \
                 ('S', '5'), \
-                ('H', '6'), \
+                ('H', '6') \
                 ])
 
 	hq_tf_fd_charlie_2_delta_char = dict([ \
@@ -323,7 +323,7 @@ class SymbolLookup(object) :
                 ('E', '4'), \
                 ('G', '5'), \
                 ('B', '6'), \
-                ('D', '7'), \
+                ('D', '7') \
                 ])
 
 	status_charlie_2_delta_char = dict([ \
@@ -332,7 +332,7 @@ class SymbolLookup(object) :
                 ('C', '2'), \
                 ('D', '3'), \
                 ('X', '4'), \
-                ('F', '5'), \
+                ('F', '5') \
                 ])
 
 	echelon_mobility_charlie_2_delta_char = dict([ \
@@ -365,7 +365,32 @@ class SymbolLookup(object) :
                 ('V', '42'), \
 
                 ('X', '51'), \
-                ('Y', '52'), \
+                ('Y', '52') \
+                ])
+
+	# for the ~500 Delta symbols that don't map D->C indentify a fallback based on the symbol set
+	delta_symbol_set_2_fallback_sidc = dict([ \
+				# 2525Delta Symbol Set Code, 2525 Charlie Substitute/Fallback Symbol
+				('01', 'SUAP-----------'), \
+				('02', 'SUAP-----------'), \
+				('05', 'SUPP-----------'), \
+				('06', 'SUPP-----------'), \
+				('10', 'SUGP-----------'), \
+				('11', 'SUGP-----------'), \
+				('15', 'SUGPE----------'), \
+				('20', 'SUGPI-----H----'), \
+				('30', 'SUSP-----------'), \
+				('35', 'SUUP-----------'), \
+				('36', 'SUUPWMC--------'), \
+				('40', 'SUGP-----------'), \
+				('47', 'SUPP-----------'), \
+				('50', 'IUPPSRU--------'), \
+				('51', 'IUAPSRU--------'), \
+				('52', 'IUGPSRU--------'), \
+				('53', 'IUSPSRU--------'), \
+				('54', 'IUUPSRU--------'), \
+				('60', 'SUGPE----------'), \
+				('98', 'SUZP-----------') 
                 ])
 
 	def __init__(self) :
@@ -593,33 +618,51 @@ class SymbolLookup(object) :
 				sqliteRow = sqliteCursor.fetchone()
 				warningRemarks = 'Removed Modifiers to match'
 
-		# if still not found, return None
+		# if still not found, see if a fallback symbol can be found from the symbolset
 		if (sqliteRow == None) :
-			print ("WARNING: Attributes NOT FOUND in query: ", symbolSetString, entityString, \
-										mod1String, mod2String)
-			warningRemarks = 'Symbol not found in D->C Mapping Table'
-			return None
-		else :
-			if warningRemarks is not None and len(sqliteRow) > 10 :
-				# add the warning remarks to the remarks column
-				newRemarks = sqliteRow[10] + ":WARNING:" + warningRemarks
-				# A bit TRICKY: convert to a list first so we can easily recreate this tuple 
-				# (sqliteRow is a tuple)
-				sqliteRow = tuple(list(sqliteRow)[0:10] + [newRemarks])
-			return sqliteRow
+			# see if there is an alternate fallback mapping based on symbol set
+			if symbolSetString in SymbolLookup.delta_symbol_set_2_fallback_sidc : 
+				fallBackCharlie = SymbolLookup.delta_symbol_set_2_fallback_sidc[symbolSetString]
+				warningRemarks = None 
+				fallbackRemarks = 'Delta Symbol: ' + symbolSetString + ':' + entityString + \
+					' NOT FOUND, using Charlie fallback: ' + fallBackCharlie
+				sqliteRow = tuple([fallBackCharlie, fallBackCharlie, symbolSetString, '000000', \
+					'00', '00', 'Unmapped Symbol D->C', 'None', 'None', fallBackCharlie, \
+					fallbackRemarks])
+			else : 
+				# no fallback mapping exists, return None
+				print ("WARNING: Attributes NOT FOUND in query: ", symbolSetString, entityString, \
+											mod1String, mod2String)
+				warningRemarks = 'Symbol not found in D->C Mapping Table'
+				return None
+
+		if warningRemarks is not None and len(sqliteRow) > 10 :
+			# add the warning remarks to the remarks column
+			newRemarks = sqliteRow[10] + ":WARNING:" + warningRemarks
+			# A bit TRICKY: convert to a list first so we can easily recreate this tuple 
+			# (sqliteRow is a tuple)
+			sqliteRow = tuple(list(sqliteRow)[0:10] + [newRemarks])
+		return sqliteRow
 
 	def getCharlieCodeFromDelta(self, deltaCodeIn) : 
 
 		symbolIdDelta = SymbolIdCodeDelta()
-		symbolIdDelta.full_code = deltaCodeIn
 
 		# Default to "Unknown" symbol
 		charlieCode = SymbolLookupCharlie.DEFAULT_POINT_SIDC
 		name        = 'Not Found'
 		remarks     = 'Not Found'
 
+		# allow either the short code or the full code
+		if len(deltaCodeIn) == 8 :
+			symbolIdDelta.short_code = deltaCodeIn
+		elif len(deltaCodeIn) == 20 :
+			symbolIdDelta.full_code = deltaCodeIn
+		else :
+			return charlieCode, 'Bad SIDC Length', 'Bad SIDC Length'
+
 		if not symbolIdDelta.is_valid() :
-			return charlieCode, name, remarks
+			return charlieCode, 'Invalid SIDC Code', 'Invalid SIDC Code'
 
 		symbolSetString = symbolIdDelta.symbol_set
 		entityString    = symbolIdDelta.entity_code

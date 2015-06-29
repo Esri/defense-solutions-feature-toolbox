@@ -155,8 +155,8 @@ def calculate2525CharlieSidcFromDeltaSidc() :
 				
 				if symbolIdCharlie is None or \
 					symbolIdCharlie == SymbolUtilities.SymbolLookupCharlie.DEFAULT_POINT_SIDC:
-					# Get the default SIDC based on the shape/geometry type:
 
+					# Get the default SIDC based on the shape/geometry type:
 					expectedGeometry = \
 						SymbolUtilities.SymbolLookupCharlie.getGeometryStringFromShapeType( \
 							featureClassShapeType)
