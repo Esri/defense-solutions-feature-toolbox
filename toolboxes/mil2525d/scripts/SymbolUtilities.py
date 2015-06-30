@@ -49,6 +49,9 @@ class SymbolIdCodeDelta(object) :
 
 		self.full_code = SymbolIdCodeDelta.INVALID_FULL_CODE
 
+	def __str__(self):
+		return str(type(self)) + ' : ' + self.human_readable_code
+
 	@staticmethod
 	def left_zero_pad(string_in, required_length):
 		 return string_in.zfill(required_length)
@@ -369,8 +372,8 @@ class SymbolLookup(object) :
                 ])
 
 	# for the ~500 Delta symbols that don't map D->C indentify a fallback based on the symbol set
+	# 2525Delta Symbol Set Code, 2525 Charlie Substitute/Fallback Symbol
 	delta_symbol_set_2_fallback_sidc = dict([ \
-				# 2525Delta Symbol Set Code, 2525 Charlie Substitute/Fallback Symbol
 				('01', 'SUAP-----------'), \
 				('02', 'SUAP-----------'), \
 				('05', 'SUPP-----------'), \
@@ -390,7 +393,7 @@ class SymbolLookup(object) :
 				('53', 'IUSPSRU--------'), \
 				('54', 'IUUPSRU--------'), \
 				('60', 'SUGPE----------'), \
-				('98', 'SUZP-----------') 
+				('98', 'SUZP-----------') \
                 ])
 
 	def __init__(self) :
@@ -450,6 +453,8 @@ class SymbolLookup(object) :
 
 			self.sqlitedb.commit()
 
+			csv_fp.close()
+
 		except Exception as openEx :
 			print('Could not open file for reading: ' + str(inputFile))
 			self.sqlitedb = None
@@ -459,8 +464,8 @@ class SymbolLookup(object) :
 	
 	@staticmethod
 	# Search a dictionary for a value & return the key
-	def getDictionaryKeyByValue(dict, searchValue):
-		for key, value in dict.items():
+	def getDictionaryKeyByValue(theDict, searchValue):
+		for key, value in theDict.items():
 			if value == searchValue:
 				return key
 		return None # if not found
@@ -495,7 +500,7 @@ class SymbolLookup(object) :
 
 		# if still not found, return None
 		if (sqliteRow == None) :
-			print ("WARNING: " + symbolId + ":" + attribute + " NOT FOUND")
+			print ("WARNING: " + charlieFirstTen + " NOT FOUND")
 			return None
 		else :
 			return sqliteRow
@@ -654,7 +659,9 @@ class SymbolLookup(object) :
 		remarks     = 'FAILED: not found in D->C Mapping Table'
 
 		# allow either the short code or the full code
-		if len(deltaCodeIn) == 8 :
+		if deltaCodeIn is None:
+			return charlieCode, 'Null SIDC Code', 'Null SIDC Code'
+		elif len(deltaCodeIn) == 8 :
 			symbolIdDelta.short_code = deltaCodeIn
 		elif len(deltaCodeIn) == 20 :
 			symbolIdDelta.full_code = deltaCodeIn
@@ -686,22 +693,22 @@ class SymbolLookup(object) :
 			# now we have the base symbol, but the remaining attributes (affiliation, status, 
 			# HQTFFD, echelon) - are a little messier to map, so just use Look Up Tables 
 
-			charlieAffilChar = SymbolLookup.getDictionaryKeyByValue(
+			charlieAffilChar = SymbolLookup.getDictionaryKeyByValue( \
 				SymbolLookup.affiliation_charlie_2_delta_char, symbolIdDelta.affiliation)
 			if charlieAffilChar is None :
 				charlieAffilChar = 'U'
 
-			charlieStatusChar = SymbolLookup.getDictionaryKeyByValue(
+			charlieStatusChar = SymbolLookup.getDictionaryKeyByValue( \
 				SymbolLookup.status_charlie_2_delta_char, symbolIdDelta.status)
 			if charlieStatusChar is None :
 				charlieStatusChar = 'P'
 		
-			charlieHqFdTfChar = SymbolLookup.getDictionaryKeyByValue(
+			charlieHqFdTfChar = SymbolLookup.getDictionaryKeyByValue( \
 				SymbolLookup.hq_tf_fd_charlie_2_delta_char, symbolIdDelta.hq_tf_fd)
 			if charlieHqFdTfChar is None :
 				charlieHqFdTfChar = '-'
 
-			charlieEchelonChar = SymbolLookup.getDictionaryKeyByValue(
+			charlieEchelonChar = SymbolLookup.getDictionaryKeyByValue( \
 				SymbolLookup.echelon_mobility_charlie_2_delta_char, symbolIdDelta.echelon_mobility)
 			if charlieEchelonChar is None :
 				charlieEchelonChar = '-'
@@ -716,7 +723,7 @@ class SymbolLookup(object) :
 
 			remarks = row2525d[10]
 			if remarks == 'Retired' :
-				print("WARNING: Retired Symbol=" + lookupCharlieCode)
+				print("WARNING: Retired Symbol=" + charlieCode)
 			elif 'pass' in remarks :
 				remarks = remarks.replace('pass', 'success') # replace with more meaningful remark
 
@@ -776,18 +783,18 @@ class SymbolLookupCharlie(object) :
                 ])
 
 	# Symbol/Rule ID Name to SIDC mapping 
-	nameToSIC = dict([ \
 	###########################################
 	## TODO - If you have rule names that do not match the standard Military Features convention
 	## you must add them here(in UpperCase), or otherwise set in this dictionary. Example shown:
 	## TODO2 - we could also add this as a csv table that gets loaded
 	###########################################
+	nameToSIC = dict([ \
 			("STRYKER BATTALION",            "SFGPUCII---F---"), \
 			("STRYKER CAVALRY TROOP",        "SFGPUCRRL--E---"), \
 			("FIELD ARTILLERY BATTALION",    "SFGPUCF----F---"), \
 			("STRYKER HEADQUARTERS COMPANY", "SFGPUH-----E---"), \
 			("BRIGADE SUPPORT BATTALION",    "SFGPU------F---"), \
-			("INFANTRY PLATOON F", "SFGPUCI----D---")
+			("INFANTRY PLATOON F", "SFGPUCI----D---") \
 			])
 
 	FRIENDLY_AFFILIATION = "FRIENDLY"
@@ -893,6 +900,8 @@ class SymbolLookupCharlie(object) :
 				VALUES (?,?,?,?,?,?,?,?)''', reader)
 
 			self.sqlitedb.commit()
+
+			csv_fp.close()
 
 		except Exception as openEx :
 			print('Could not open file for reading: ' + str(inputFile))
@@ -1042,12 +1051,12 @@ class SymbolLookupCharlie(object) :
 			if not ((affiliation is None) or (affiliation is "")) :  
 				affiliationChar = sidc[1]
 				expectedAffiliationChar = SymbolLookupCharlie.affiliationToAffiliationChar[affiliation]
-	
+
 				if affiliationChar != expectedAffiliationChar :
 					print("Unexpected Affiliation Char: " + affiliationChar + " != " + expectedAffiliationChar)
 					sidc = sidc[0] + expectedAffiliationChar + sidc[2:]
 
-			if add2Map : 
+			if add2Map :
 				# add the query results to the map (if valid)
 				self.nameToSIC[symbolNameUpper] = sidc
 				print("Adding to Map: [" + symbolNameUpper + ", " + sidc + "]")
@@ -1094,17 +1103,17 @@ class SymbolLookupCharlie(object) :
 		# print symbolId, geoType
 		return geoType
 
-	def endsInAffilationString(self, str) : 
+	def endsInAffilationString(self, thestr) :
 		endsInRegex = ".* [FHNU]$"
-		matching = bool(re.match(endsInRegex, str.upper()))
+		matching = bool(re.match(endsInRegex, thestr.upper()))
 		return matching
 
-	def endsInLeft(self, str) : 
+	def endsInLeft(self, thestr) :
 		endsInRegex = ".*LEFT$"
-		matching = bool(re.match(endsInRegex, str.upper()))
+		matching = bool(re.match(endsInRegex, thestr.upper()))
 		return matching
 
-	def endsInRight(self, str) : 
+	def endsInRight(self, thestr) :
 		endsInRegex = ".*RIGHT$"
-		matching = bool(re.match(endsInRegex, str.upper()))
+		matching = bool(re.match(endsInRegex, thestr.upper()))
 		return matching

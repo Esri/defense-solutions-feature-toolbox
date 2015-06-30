@@ -153,7 +153,7 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 				else :
 					arcpy.AddWarning("Could not convert 2525Charlie SIDC: " + mil2525CharlieSidc)
 					# Fallback case
-					symbolIdCodeDelta = SymbolIdCodeDelta.RETIRED_UNKNOWN_FULL_CODE
+					symbolIdCodeDelta = SymbolUtilities.SymbolIdCodeDelta.RETIRED_UNKNOWN_FULL_CODE
 					conversionRemarks = "Conversion Error"
 				
 				try : 

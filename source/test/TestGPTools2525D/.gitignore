@@ -1,0 +1,4 @@
+*.sav
+pylintrc
+*.pyproj
+*.sln
