@@ -13,7 +13,7 @@
 # limitations under the License.
 # ----------------------------------------------------------------------------------
 # Calculate2525DeltaSidcFromCharlieSidc.py
-# Description: GP Tool to Calculate 2525D SIDC from 2525C SIDC
+# Description: GP Tool to Calculate 2525D(Delta) SIDC from 2525C(Charlie) SIDC
 # Requirements: ArcGIS Desktop
 # ----------------------------------------------------------------------------------
 
@@ -148,12 +148,12 @@ def calculate2525DeltaSidcFromCharlieSidc() :
 				symbolId = symbolLookup.getDeltaCodeFromCharlie(mil2525CharlieSidc)
 
 				if symbolId.is_valid() : 
-					symbolIdCodeDelta = symbolId.full_code # .human_readable_code
+					symbolIdCodeDelta = symbolId.full_code
 					conversionRemarks = symbolId.remarks
 				else :
 					arcpy.AddWarning("Could not convert 2525Charlie SIDC: " + mil2525CharlieSidc)
 					# Fallback case
-					symbolIdCodeDelta = SymbolIdCodeDelta.RETIRED_UNKNOWN_FULL_CODE
+					symbolIdCodeDelta = SymbolUtilities.SymbolIdCodeDelta.RETIRED_UNKNOWN_FULL_CODE
 					conversionRemarks = "Conversion Error"
 				
 				try : 

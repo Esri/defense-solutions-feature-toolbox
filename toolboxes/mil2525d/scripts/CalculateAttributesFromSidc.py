@@ -80,7 +80,6 @@ def calculateAttributesFromSidcField() :
 		inputFC = arcpy.GetParameter(0)
 		if (inputFC == '') or (inputFC is None):
 			inputFC = os.path.normpath(os.path.join(defaultDataPath, \
-				# r'PairwiseTestData.gdb/MilitaryFeatures/Air'))		
 				r'engagementarea.gdb/DirectFireWeapons/DirectFire_FriendlyEquipment'))					
 
 		try : 

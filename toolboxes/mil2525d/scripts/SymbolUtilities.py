@@ -22,12 +22,14 @@ import os
 import re
 import sqlite3
 import sys
+import traceback
 
 class SymbolIdCodeDelta(object) :
 
 	INVALID_FULL_CODE = 'INVALID'
 	NOT_SET = 'NOT SET'
-	RETIRED_UNKNOWN_FULL_CODE = '10019800001000000000'
+	RETIRED_UNKNOWN_FULL_CODE  = '10019800001000000000'
+	RETIRED_UNKNOWN_SHORT_CODE = '98100000'
 
 	def __init__(self) :
 
@@ -46,6 +48,9 @@ class SymbolIdCodeDelta(object) :
 		self.remarks = SymbolIdCodeDelta.NOT_SET
 
 		self.full_code = SymbolIdCodeDelta.INVALID_FULL_CODE
+
+	def __str__(self):
+		return str(type(self)) + ' : ' + self.human_readable_code
 
 	@staticmethod
 	def left_zero_pad(string_in, required_length):
@@ -88,6 +93,32 @@ class SymbolIdCodeDelta(object) :
 		self.__full_code = str(full_code)
 		if (full_code != SymbolIdCodeDelta.INVALID_FULL_CODE) :
 			self.populate_properties_from_code()
+
+	# short_code - to set/get the shortened (8 digit icon id) code 
+	@property
+	def short_code(self):
+
+		if self.__full_code == SymbolIdCodeDelta.INVALID_FULL_CODE :
+			self.populate_code_from_properties()
+
+		if (len(self.__full_code) < 16) :
+			self.__short_code = SymbolIdCodeDelta.RETIRED_UNKNOWN_SHORT_CODE
+		else :
+			self.__short_code = self.__full_code[4:6] + self.__full_code[10:16]
+
+		return self.__short_code
+
+	@short_code.setter
+	def short_code(self, short_code):
+
+		short_code_str = str(short_code)
+
+		if (short_code is None) or len(short_code_str) < 8 :
+			print('Setting Empty or Invalid Short Code')
+			return
+
+		self.__short_code = str(short_code_str)
+		self.full_code = '1001' + short_code_str[0:2] + '0000' + short_code_str[2:8] + '0000' 
 
 	#####################################################
 	# 2525D: A.5.2.1  Set A - First ten digits 
@@ -284,7 +315,7 @@ class SymbolLookup(object) :
                 ('F', '3'), \
                 ('N', '4'), \
                 ('S', '5'), \
-                ('H', '6'), \
+                ('H', '6') \
                 ])
 
 	hq_tf_fd_charlie_2_delta_char = dict([ \
@@ -295,7 +326,7 @@ class SymbolLookup(object) :
                 ('E', '4'), \
                 ('G', '5'), \
                 ('B', '6'), \
-                ('D', '7'), \
+                ('D', '7') \
                 ])
 
 	status_charlie_2_delta_char = dict([ \
@@ -304,7 +335,7 @@ class SymbolLookup(object) :
                 ('C', '2'), \
                 ('D', '3'), \
                 ('X', '4'), \
-                ('F', '5'), \
+                ('F', '5') \
                 ])
 
 	echelon_mobility_charlie_2_delta_char = dict([ \
@@ -337,56 +368,142 @@ class SymbolLookup(object) :
                 ('V', '42'), \
 
                 ('X', '51'), \
-                ('Y', '52'), \
+                ('Y', '52') \
+                ])
+
+	# for the ~500 Delta symbols that don't map D->C indentify a fallback based on the symbol set
+	# 2525Delta Symbol Set Code, 2525 Charlie Substitute/Fallback Symbol
+	delta_symbol_set_2_fallback_sidc = dict([ \
+				('01', 'SUAP-----------'), \
+				('02', 'SUAP-----------'), \
+				('05', 'SUPP-----------'), \
+				('06', 'SUPP-----------'), \
+				('10', 'SUGP-----------'), \
+				('11', 'SUGP-----------'), \
+				('15', 'SUGPE----------'), \
+				('20', 'SUGPI-----H----'), \
+				('30', 'SUSP-----------'), \
+				('35', 'SUUP-----------'), \
+				('36', 'SUUPWMC--------'), \
+				('40', 'SUGP-----------'), \
+				('47', 'SUPP-----------'), \
+				('50', 'IUPPSRU--------'), \
+				('51', 'IUAPSRU--------'), \
+				('52', 'IUGPSRU--------'), \
+				('53', 'IUSPSRU--------'), \
+				('54', 'IUUPSRU--------'), \
+				('60', 'SUGPE----------'), \
+				('98', 'SUZP-----------') \
                 ])
 
 	def __init__(self) :
 
-		self.idDict2525CtoD = {}
+		self.sqlitedb = None
 		self.initialize()
 
 	def initialized(self) : 
-		return len(self.idDict2525CtoD) > 0
+		return self.sqlitedb != None
 
 	def initialize(self) :
 
 		if self.initialized() :
 			return True
 
-		currentPath = os.path.dirname(__file__)
-		dataPath = os.path.normpath(os.path.join(currentPath, r"../tooldata"))
-		inputFile  = os.path.normpath(os.path.join(dataPath, r"LegacyMappingTableCtoD.csv"))
-
-		print("Initializing using source data: " + inputFile)
-
-		# Open Input File & load into dict (if possible)
 		try :
+
+			self.sqlitedb = sqlite3.connect(':memory:')
+
+			# Expected/Required Format of input csv:
+			#  {Charlie1stTen,CharlieFull,DeltaSymbolSet,
+			#   DeltaEntity,DeltaMod1,DeltaMod2,DeltaEntityName,DeltaMod1Name,
+			#   DeltaMod2Name,DeltaToCharlie,Remarks}
+			# Expects to use source file from here: 
+			#   https://github.com/Esri/joint-military-symbology-xml/blob/master/samples/legacy_support/LegacyMappingTableCtoD.csv
+
+			cur = self.sqlitedb.cursor()
+			cur.execute('''CREATE TABLE LegacyMapping (
+						Charlie1stTen TEXT,
+						CharlieFull TEXT,
+						DeltaSymbolSet TEXT,
+						DeltaEntity TEXT,
+						DeltaMod1 TEXT,
+						DeltaMod2 TEXT,
+						DeltaEntityName TEXT,
+						DeltaMod1Name TEXT,
+						DeltaMod2Name TEXT,
+						DeltaToCharlie TEXT,
+						Remarks TEXT
+						)''')
+
+			currentPath = os.path.dirname(__file__)
+			dataPath = os.path.normpath(os.path.join(currentPath, r"../tooldata"))
+			inputFile  = os.path.normpath(os.path.join(dataPath, r"LegacyMappingTableCtoD.csv"))
+
 			if sys.version < '3': 
-				f_in = open(inputFile, 'rb')
+				csv_fp=open(inputFile, 'rb')
 			else: 
-				f_in = open(inputFile, "r") 
+				csv_fp=open(inputFile, 'r')
 
-			reader = csv.reader(f_in, delimiter=',')
-
+			reader = csv.reader(csv_fp)
 			next(reader, None) # skip header row
 
-			# Expected Format:
-			#  {2525Charlie1stTen : 2525Charlie1stTen,2525Charlie,2525DeltaSymbolSet,
-			#     2525DeltaEntity,2525DeltaMod1,2525DeltaMod2,2525DeltaName,2525DeltaMod1Name,
-			#     2525DeltaMod2Name,DeltaToCharlie,Remarks}
+			cur.executemany('''
+				INSERT INTO LegacyMapping (Charlie1stTen,CharlieFull,DeltaSymbolSet,DeltaEntity,DeltaMod1,DeltaMod2,DeltaEntityName,DeltaMod1Name,DeltaMod2Name,DeltaToCharlie,Remarks)
+				VALUES (?,?,?,?,?,?,?,?,?,?,?)''', reader)
 
-			self.idDict2525CtoD = {row[0]:row for row in reader}
+			self.sqlitedb.commit()
+
+			csv_fp.close()
 
 		except Exception as openEx :
 			print('Could not open file for reading: ' + str(inputFile))
+			self.sqlitedb = None
 			return False
 
 		return self.initialized()
-
-	# If debug needed
-	# for key in idDict2525CtoD :
-	#	print(key)
 	
+	@staticmethod
+	# Search a dictionary for a value & return the key
+	def getDictionaryKeyByValue(theDict, searchValue):
+		for key, value in theDict.items():
+			if value == searchValue:
+				return key
+		return None # if not found
+
+	def queryDbEntryFromCharlieFirstTen(self, charlieFirstTen) :
+
+		if not self.initialized() or len(charlieFirstTen) < 10 :
+			return None
+
+		sqliteCursor = self.sqlitedb.cursor()
+
+		# This simple query is a little more difficult than necessary because the source data
+		# IDs don't really follow a consistent format (so 3 queries/checks required)
+
+		lookupCharlieCode = charlieFirstTen.upper()      
+
+		query = "select * from LegacyMapping where (Charlie1stTen = ?)"
+		sqliteCursor.execute(query, (lookupCharlieCode,))
+		sqliteRow = sqliteCursor.fetchone()
+
+		# some keys only have an "F" version
+		if (sqliteRow == None) :
+			alternateLookupKey = lookupCharlieCode[0] + 'F' + lookupCharlieCode[2:10]
+			sqliteCursor.execute(query, (alternateLookupKey,))
+			sqliteRow = sqliteCursor.fetchone()
+			
+			# ...and some keys only have a "H" version...
+			if (sqliteRow == None) :
+				alternateLookupKey = lookupCharlieCode[0] + 'H' + lookupCharlieCode[2:10]
+				sqliteCursor.execute(query, (alternateLookupKey,))
+				sqliteRow = sqliteCursor.fetchone()
+
+		# if still not found, return None
+		if (sqliteRow == None) :
+			print ("WARNING: " + charlieFirstTen + " NOT FOUND")
+			return None
+		else :
+			return sqliteRow
 
 	def getDeltaCodeFromCharlie(self, charlieCodeIn) : 
 
@@ -404,6 +521,8 @@ class SymbolLookup(object) :
 		entityString    = '100000'
 		mod1String      = '00'
 		mod2String      = '00'
+		name            = 'Not Valid'
+		remarks         = 'Not Valid'
 
 		isWeather = (charlieCode[0] == 'W')
 
@@ -422,18 +541,10 @@ class SymbolLookup(object) :
 		print("Using Charlie Lookup: " + lookupCharlieCode)
 
 		try : 
-			if not (lookupCharlieCode in self.idDict2525CtoD) :
-				# some keys only have an "F" version
-				alternateLookupKey = lookupCharlieCode[0] + 'F' + lookupCharlieCode[2:10]
-				if not (alternateLookupKey in self.idDict2525CtoD) :
-					# ...and some keys only have a "H" version...
-					alternateLookupKey = lookupCharlieCode[0] + 'H' + lookupCharlieCode[2:10]
-					if not (alternateLookupKey in self.idDict2525CtoD) :
-						print("Could not find key: " + lookupCharlieCode)
-						return symbolId
-					lookupCharlieCode = alternateLookupKey
-
-			row2525d = self.idDict2525CtoD[lookupCharlieCode]
+			row2525d = self.queryDbEntryFromCharlieFirstTen(lookupCharlieCode)
+			if (row2525d is None) or (len(row2525d) < 10):
+				print("Could not find entry for Charlie ID: " + lookupCharlieCode)
+				return symbolId
 
 			symbolSetString = row2525d[2]
 			entityString    = row2525d[3]
@@ -447,11 +558,12 @@ class SymbolLookup(object) :
 			remarks = row2525d[10]
 			if remarks == 'Retired' :
 				print("WARNING: Retired Symbol=" + lookupCharlieCode)
-			elif remarks == 'pass' :
-				remarks = 'success' # replace with more meaningful remark
+			elif 'pass' in remarks :
+				remarks = remarks.replace('pass', 'success') # replace with more meaningful remark
 
-		except : 
+		except Exception as err: 
 			print("Crash with SIDC/key: " + lookupCharlieCode)
+			print(traceback.format_exception_only(type(err), err)[0].rstrip())
 
 		symbolId.symbol_set  = symbolSetString
 		symbolId.entity_code = entityString
@@ -460,7 +572,8 @@ class SymbolLookup(object) :
 		symbolId.name        = name
 		symbolId.remarks     = remarks
 
-		# now we have the base symbol, but the remaining attributes are a little messier to map 
+		# now we have the base symbol, but the remaining attributes (affiliation, status, 
+		# HQTFFD, echelon) - are a little messier to map, so just use Look Up Tables 
 		affilChar = charlieCode[1]
 		if affilChar in SymbolLookup.affiliation_charlie_2_delta_char :
 			symbolId.affiliation = SymbolLookup.affiliation_charlie_2_delta_char[affilChar]
@@ -478,6 +591,147 @@ class SymbolLookup(object) :
 			symbolId.echelon_mobility = SymbolLookup.echelon_mobility_charlie_2_delta_char[echelonChar]
 		
 		return symbolId 
+
+	def queryDbEntryFromDeltaAttributes(self, symbolSetString, entityString, \
+										mod1String, mod2String) :
+
+		if not self.initialized() or len(symbolSetString) < 2 or \
+			len(entityString) < 6 :
+			return None
+
+		warningRemarks = None
+
+		sqliteCursor = self.sqlitedb.cursor()
+
+		query = '''select * from LegacyMapping where (DeltaSymbolSet = ?) and (DeltaEntity = ?) and 
+			(DeltaMod1 = ?) and (DeltaMod2 = ?)'''
+		sqliteCursor.execute(query, (symbolSetString, entityString, mod1String, mod2String))
+		sqliteRow = sqliteCursor.fetchone()
+
+		# if not found, omit the first or second modifier and re-query
+		if (sqliteRow == None) :
+			query = '''select * from LegacyMapping where (DeltaSymbolSet = ?) and (DeltaEntity = ?) and 
+				((DeltaMod1 = ?) or (DeltaMod2 = ?))'''
+			sqliteCursor.execute(query, (symbolSetString, entityString, mod1String, mod2String))
+			sqliteRow = sqliteCursor.fetchone()
+			warningRemarks = 'Not an exact modifer match'
+
+			# if not found, omit the modifiers altogether and re-query
+			if (sqliteRow == None) :
+				query = 'select * from LegacyMapping where (DeltaSymbolSet = ?) and (DeltaEntity = ?)'
+				sqliteCursor.execute(query, (symbolSetString, entityString))
+				sqliteRow = sqliteCursor.fetchone()
+				warningRemarks = 'Removed Modifiers to match'
+
+		# if still not found, see if a fallback symbol can be found from the symbolset
+		if (sqliteRow == None) :
+			# see if there is an alternate fallback mapping based on symbol set
+			if symbolSetString in SymbolLookup.delta_symbol_set_2_fallback_sidc : 
+				fallBackCharlie = SymbolLookup.delta_symbol_set_2_fallback_sidc[symbolSetString]
+				warningRemarks = None 
+				fallbackRemarks = 'Delta Symbol: ' + symbolSetString + ':' + entityString + \
+					' NOT FOUND, using Charlie fallback: ' + fallBackCharlie
+				sqliteRow = tuple([fallBackCharlie, fallBackCharlie, symbolSetString, '000000', \
+					'00', '00', 'Unmapped Symbol D->C', 'None', 'None', fallBackCharlie, \
+					fallbackRemarks])
+			else : 
+				# no fallback mapping exists, return None
+				print ("WARNING: Attributes NOT FOUND in query: ", symbolSetString, entityString, \
+											mod1String, mod2String)
+				warningRemarks = 'Symbol not found in D->C Mapping Table'
+				return None
+
+		if warningRemarks is not None and len(sqliteRow) > 10 :
+			# add the warning remarks to the remarks column
+			newRemarks = sqliteRow[10] + ":WARNING:" + warningRemarks
+			# A bit TRICKY: convert to a list first so we can easily recreate this tuple 
+			# (sqliteRow is a tuple)
+			sqliteRow = tuple(list(sqliteRow)[0:10] + [newRemarks])
+		return sqliteRow
+
+	def getCharlieCodeFromDelta(self, deltaCodeIn) : 
+
+		symbolIdDelta = SymbolIdCodeDelta()
+
+		# Default to "Unknown" symbol
+		charlieCode = SymbolLookupCharlie.DEFAULT_POINT_SIDC
+		name        = 'Not Found'
+		remarks     = 'FAILED: not found in D->C Mapping Table'
+
+		# allow either the short code or the full code
+		if deltaCodeIn is None:
+			return charlieCode, 'Null SIDC Code', 'Null SIDC Code'
+		elif len(deltaCodeIn) == 8 :
+			symbolIdDelta.short_code = deltaCodeIn
+		elif len(deltaCodeIn) == 20 :
+			symbolIdDelta.full_code = deltaCodeIn
+		else :
+			return charlieCode, 'Bad SIDC Length', 'Bad SIDC Length'
+
+		if not symbolIdDelta.is_valid() :
+			return charlieCode, 'Invalid SIDC Code', 'Invalid SIDC Code'
+
+		symbolSetString = symbolIdDelta.symbol_set
+		entityString    = symbolIdDelta.entity_code
+		mod1String      = symbolIdDelta.modifier1
+		mod2String      = symbolIdDelta.modifier2
+
+		try :
+
+			row2525d = self.queryDbEntryFromDeltaAttributes(symbolSetString, \
+				entityString, mod1String, mod2String)
+
+			if (row2525d is None) or (len(row2525d) < 10):
+				print("Could not find entry for Delta ID: " + deltaCodeIn)
+				return charlieCode, name, remarks
+
+			charlieCode = row2525d[1]
+			if charlieCode is None or len(charlieCode) < 15 :
+				print("Could not find 2525C column entry for Delta ID: " + deltaCodeIn)
+				return charlieCode, name, remarks
+
+			# now we have the base symbol, but the remaining attributes (affiliation, status, 
+			# HQTFFD, echelon) - are a little messier to map, so just use Look Up Tables 
+
+			charlieAffilChar = SymbolLookup.getDictionaryKeyByValue( \
+				SymbolLookup.affiliation_charlie_2_delta_char, symbolIdDelta.affiliation)
+			if charlieAffilChar is None :
+				charlieAffilChar = 'U'
+
+			charlieStatusChar = SymbolLookup.getDictionaryKeyByValue( \
+				SymbolLookup.status_charlie_2_delta_char, symbolIdDelta.status)
+			if charlieStatusChar is None :
+				charlieStatusChar = 'P'
+		
+			charlieHqFdTfChar = SymbolLookup.getDictionaryKeyByValue( \
+				SymbolLookup.hq_tf_fd_charlie_2_delta_char, symbolIdDelta.hq_tf_fd)
+			if charlieHqFdTfChar is None :
+				charlieHqFdTfChar = '-'
+
+			charlieEchelonChar = SymbolLookup.getDictionaryKeyByValue( \
+				SymbolLookup.echelon_mobility_charlie_2_delta_char, symbolIdDelta.echelon_mobility)
+			if charlieEchelonChar is None :
+				charlieEchelonChar = '-'
+
+			# Now put the SIDC back together with the mapped+correct attributes
+			charlieCode = charlieCode[0] + charlieAffilChar + charlieCode[2] + charlieStatusChar + \
+				charlieCode[4:10] + charlieHqFdTfChar + charlieEchelonChar + charlieCode[12:]
+
+			name    = row2525d[6]
+			if name.endswith(' : Unknown'): #remove this bad entry from name
+				name = name[:-10]
+
+			remarks = row2525d[10]
+			if remarks == 'Retired' :
+				print("WARNING: Retired Symbol=" + charlieCode)
+			elif 'pass' in remarks :
+				remarks = remarks.replace('pass', 'success') # replace with more meaningful remark
+
+		except Exception as err: 
+			print("Crash with SIDC/key: " + deltaCodeIn)
+			print(traceback.format_exception_only(type(err), err)[0].rstrip())
+
+		return charlieCode, name, remarks
 
 class SymbolLookupCharlie(object) :
 	
@@ -529,17 +783,18 @@ class SymbolLookupCharlie(object) :
                 ])
 
 	# Symbol/Rule ID Name to SIDC mapping 
-	nameToSIC = dict([ \
 	###########################################
 	## TODO - If you have rule names that do not match the standard Military Features convention
 	## you must add them here(in UpperCase), or otherwise set in this dictionary. Example shown:
+	## TODO2 - we could also add this as a csv table that gets loaded
 	###########################################
+	nameToSIC = dict([ \
 			("STRYKER BATTALION",            "SFGPUCII---F---"), \
 			("STRYKER CAVALRY TROOP",        "SFGPUCRRL--E---"), \
 			("FIELD ARTILLERY BATTALION",    "SFGPUCF----F---"), \
 			("STRYKER HEADQUARTERS COMPANY", "SFGPUH-----E---"), \
 			("BRIGADE SUPPORT BATTALION",    "SFGPU------F---"), \
-			("INFANTRY PLATOON F", "SFGPUCI----D---")
+			("INFANTRY PLATOON F", "SFGPUCI----D---") \
 			])
 
 	FRIENDLY_AFFILIATION = "FRIENDLY"
@@ -565,7 +820,7 @@ class SymbolLookupCharlie(object) :
 		elif geoString == SymbolLookupCharlie.AREA_STRING : 
 			defaultSidc = SymbolLookupCharlie.DEFAULT_AREA_SIDC
 
-		# include the affiliation for the not found ones
+		# include the affiliation for the not found ones (if parameter is supplied)
 		if (not affiliation is None) and \
 			(affiliation in SymbolLookupCharlie.affiliationToAffiliationChar) : 
 			defaultSidc = defaultSidc[0] + \
@@ -582,6 +837,8 @@ class SymbolLookupCharlie(object) :
 			return SymbolLookupCharlie.LINE_STRING
 		elif shapeType == "Polygon" : 
 			return SymbolLookupCharlie.AREA_STRING
+		elif shapeType == "MultiPoint" :
+			return SymbolLookupCharlie.LINE_STRING
 		else :
 			return SymbolLookupCharlie.POINT_STRING
 
@@ -643,6 +900,8 @@ class SymbolLookupCharlie(object) :
 				VALUES (?,?,?,?,?,?,?,?)''', reader)
 
 			self.sqlitedb.commit()
+
+			csv_fp.close()
 
 		except Exception as openEx :
 			print('Could not open file for reading: ' + str(inputFile))
@@ -792,12 +1051,12 @@ class SymbolLookupCharlie(object) :
 			if not ((affiliation is None) or (affiliation is "")) :  
 				affiliationChar = sidc[1]
 				expectedAffiliationChar = SymbolLookupCharlie.affiliationToAffiliationChar[affiliation]
-	
+
 				if affiliationChar != expectedAffiliationChar :
 					print("Unexpected Affiliation Char: " + affiliationChar + " != " + expectedAffiliationChar)
 					sidc = sidc[0] + expectedAffiliationChar + sidc[2:]
 
-			if add2Map : 
+			if add2Map :
 				# add the query results to the map (if valid)
 				self.nameToSIC[symbolNameUpper] = sidc
 				print("Adding to Map: [" + symbolNameUpper + ", " + sidc + "]")
@@ -844,17 +1103,17 @@ class SymbolLookupCharlie(object) :
 		# print symbolId, geoType
 		return geoType
 
-	def endsInAffilationString(self, str) : 
+	def endsInAffilationString(self, thestr) :
 		endsInRegex = ".* [FHNU]$"
-		matching = bool(re.match(endsInRegex, str.upper()))
+		matching = bool(re.match(endsInRegex, thestr.upper()))
 		return matching
 
-	def endsInLeft(self, str) : 
+	def endsInLeft(self, thestr) :
 		endsInRegex = ".*LEFT$"
-		matching = bool(re.match(endsInRegex, str.upper()))
+		matching = bool(re.match(endsInRegex, thestr.upper()))
 		return matching
 
-	def endsInRight(self, str) : 
+	def endsInRight(self, thestr) :
 		endsInRegex = ".*RIGHT$"
-		matching = bool(re.match(endsInRegex, str.upper()))
+		matching = bool(re.match(endsInRegex, thestr.upper()))
 		return matching

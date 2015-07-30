@@ -140,8 +140,8 @@ def calculateSidcField() :
 
 		# Split this up into fields we *must* have (required) & those that are optional
 		# (we will fail this tool if the require ones aren't there)
-		REQUIRED_FIELDS = ['identity', 'symbolset', 'entity']
-		OPTIONAL_FIELDS = ['context', 'modifier1', 'modifier2', 'echelon', \
+		REQUIRED_FIELDS = ['symbolset', 'entity']
+		OPTIONAL_FIELDS = ['identity', 'context', 'modifier1', 'modifier2', 'echelon', \
 			'mobility', 'array', 'indicator', 'operationalcondition' ]
 
 		SYMBOL_ID_FIELD_LIST = REQUIRED_FIELDS + OPTIONAL_FIELDS
@@ -186,7 +186,7 @@ def calculateSidcField() :
 		for feature in features : 
 
 			featureCount += 1
-			arcpy.AddMessage('Processing feature/message: ' + str(featureCount))
+			arcpy.AddMessage('Processing feature: ' + str(featureCount))
 
 			symbolIdCodeAttributes = {}
 
@@ -205,6 +205,7 @@ def calculateSidcField() :
 						symbolIdCodeAttributes[field] = fieldValAsString
 
 			symbolIdCode = symbolIdCodeAttributesToCode(symbolIdCodeAttributes)
+			arcpy.AddMessage('Calculated SIDC: ' + symbolIdCode)
 
 			try : 
 				feature.setValue(sidcField, symbolIdCode)
