@@ -140,8 +140,8 @@ def calculateSidcField() :
 
 		# Split this up into fields we *must* have (required) & those that are optional
 		# (we will fail this tool if the require ones aren't there)
-		REQUIRED_FIELDS = ['identity', 'symbolset', 'entity']
-		OPTIONAL_FIELDS = ['context', 'modifier1', 'modifier2', 'echelon', \
+		REQUIRED_FIELDS = ['symbolset', 'entity']
+		OPTIONAL_FIELDS = ['identity', 'context', 'modifier1', 'modifier2', 'echelon', \
 			'mobility', 'array', 'indicator', 'operationalcondition' ]
 
 		SYMBOL_ID_FIELD_LIST = REQUIRED_FIELDS + OPTIONAL_FIELDS
